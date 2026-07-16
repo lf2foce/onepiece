@@ -638,7 +638,7 @@
         return { a:p*0.6, b:-p*0.6 };
       }
       if (this.state === "block") return { a:0.35, b:-0.35 };
-      return { a:0.15, b:-0.15 };
+      return { a:-0.18, b:0.2 };   // thế tấn hơi dạng, bám đất vững
     }
 
     // ---- Helper dùng chung: hai chân + giày ----

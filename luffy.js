@@ -172,30 +172,37 @@
           }
         }
       } else {
-        // ---- VẼ ĐÔI CHÂN CAO RÁO TỰ NHIÊN (Mượt mà, không gai góc outline) ----
-        // Chân sau (Trái)
-        const kneeL = -6 + Math.sin(legs.a) * 16;
-        const footL = kneeL + Math.sin(legs.a) * 8 + 4;
-        ctx.strokeStyle = blueSh; ctx.lineWidth = 17;
-        ctx.beginPath(); ctx.moveTo(-6, -52); ctx.lineTo(kneeL, -28); ctx.stroke();
-        ctx.strokeStyle = "#dcdcdc"; ctx.lineWidth = 19;
-        ctx.beginPath(); ctx.moveTo(kneeL - 1, -29); ctx.lineTo(kneeL + 1, -26); ctx.stroke();
-        ctx.strokeStyle = skinSh; ctx.lineWidth = 11;
-        ctx.beginPath(); ctx.moveTo(kneeL, -27); ctx.lineTo(footL, -10); ctx.stroke();
-        ctx.fillStyle = "#cdbf9f"; roundRect(ctx, footL - 7, -11, 22, 9, 4); ctx.fill();
-        ctx.fillStyle = "#a98d5f"; roundRect(ctx, footL - 7, -4, 22, 4, 2); ctx.fill();
-
-        // Chân trước (Phải)
-        const kneeR = 6 + Math.sin(legs.b) * 16;
-        const footR = kneeR + Math.sin(legs.b) * 8 + 4;
-        ctx.strokeStyle = blue; ctx.lineWidth = 17;
-        ctx.beginPath(); ctx.moveTo(6, -52); ctx.lineTo(kneeR, -28); ctx.stroke();
-        ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 19;
-        ctx.beginPath(); ctx.moveTo(kneeR - 1, -29); ctx.lineTo(kneeR + 1, -26); ctx.stroke();
-        ctx.strokeStyle = skin; ctx.lineWidth = 11;
-        ctx.beginPath(); ctx.moveTo(kneeR, -27); ctx.lineTo(footR, -10); ctx.stroke();
-        ctx.fillStyle = "#efe2c8"; roundRect(ctx, footR - 7, -11, 22, 9, 4); ctx.fill();
-        ctx.fillStyle = "#a98d5f"; roundRect(ctx, footR - 7, -4, 22, 4, 2); ctx.fill();
+        // ---- ĐÔI CHÂN: đùi short xanh + bắp chân trần + gấu quần cuộn gọn ----
+        const drawLeg = (hipX, ang, front) => {
+          const kneeX = hipX + Math.sin(ang) * 16;
+          const footX = kneeX + Math.sin(ang) * 8 + 4;
+          // đùi (quần short)
+          ctx.strokeStyle = front ? blue : blueSh; ctx.lineWidth = 17;
+          ctx.beginPath(); ctx.moveTo(hipX, -52); ctx.lineTo(kneeX, -30); ctx.stroke();
+          // bắp chân trần
+          ctx.strokeStyle = front ? skin : skinSh; ctx.lineWidth = 11;
+          ctx.beginPath(); ctx.moveTo(kneeX, -30); ctx.lineTo(footX, -10); ctx.stroke();
+          // highlight bắp chân -> khối tròn
+          if (front) {
+            ctx.strokeStyle = "rgba(255,226,198,0.75)"; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(kneeX + 3, -27); ctx.lineTo(footX + 2, -13); ctx.stroke();
+          }
+          // gấu quần cuộn trắng gọn (không phồng thành cục)
+          ctx.fillStyle = front ? "#ffffff" : "#e0e0e0";
+          roundRect(ctx, kneeX - 9, -33, 18, 7, 3.5); ctx.fill();
+          ctx.fillStyle = "rgba(0,0,0,0.10)"; roundRect(ctx, kneeX - 9, -27.5, 18, 1.8, 1); ctx.fill();
+          // dép rơm
+          ctx.fillStyle = front ? "#efe2c8" : "#cdbf9f"; roundRect(ctx, footX - 7, -11, 22, 9, 4); ctx.fill();
+          ctx.fillStyle = "#a98d5f"; roundRect(ctx, footX - 7, -4, 22, 4, 2); ctx.fill();
+          // quai dép đan chữ X
+          ctx.strokeStyle = "#5a4028"; ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(footX - 5, -9); ctx.lineTo(footX + 9, -11);
+          ctx.moveTo(footX - 5, -11); ctx.lineTo(footX + 9, -9);
+          ctx.stroke();
+        };
+        drawLeg(-6, legs.a, false);   // chân sau (tối hơn)
+        drawLeg(6, legs.b, true);     // chân trước
       }
 
       // ---- ÁO VEST ĐỎ THON GỌN (Dáng người V-Shape thon mảnh mượt mà) ----
@@ -207,7 +214,11 @@
       ctx.lineTo(10, -56); ctx.quadraticCurveTo(0, -53, -10, -56);
       ctx.closePath();
       ctx.fill();
-      
+
+      // Rim-light cạnh trái áo cho khối nổi 3D
+      ctx.strokeStyle = "rgba(255,150,125,0.55)"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-12, -104); ctx.quadraticCurveTo(-11, -80, -9, -57); ctx.stroke();
+
       // Cúc áo vàng lấp lánh thon dọc áo vest
       ctx.fillStyle = "#ffd23f";
       ctx.beginPath();

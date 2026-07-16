@@ -121,6 +121,10 @@
       // Giày trước (Boots)
       ctx.fillStyle = "#262830"; roundRect(ctx, footR - 7, -11, 22, 9, 4); ctx.fill();
       ctx.fillStyle = "#0f1013"; roundRect(ctx, footR - 7, -4, 22, 4, 2); ctx.fill();
+      // Gân sáng dọc ống quần + ánh bóng mũi bốt -> khối chân rõ hơn
+      ctx.strokeStyle = "rgba(255,255,255,0.12)"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(kneeR + 2, -27); ctx.lineTo(footR + 1, -12); ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,0.16)"; roundRect(ctx, footR - 6, -11, 18, 2.4, 1.4); ctx.fill();
 
       // ---- ÁO VÕ PHỤC TRẮNG (Cơ bắp vai rộng V-Shape siêu dũng mãnh) ----
       const sg = ctx.createLinearGradient(-14, -105, 14, -62);
@@ -131,7 +135,11 @@
       ctx.lineTo(11, -62); ctx.lineTo(-11, -62);
       ctx.closePath();
       ctx.fill();
-      
+
+      // Rim-light cạnh trái áo võ phục cho khối nổi 3D
+      ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-13, -104); ctx.quadraticCurveTo(-12, -84, -10, -63); ctx.stroke();
+
       // Vết sẹo chém chéo của Mihawk khổng lồ sắc sảo trên ngực áo
       ctx.strokeStyle = "#9a2a1a"; ctx.lineWidth = 2.4;
       ctx.beginPath();
