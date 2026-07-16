@@ -632,14 +632,22 @@
       if (this.canAct()) {
         const hasAttackIntent = intents.close || intents.ranged || intents.special;
 
+        // ---- ↓ + NHẢY = BIẾN HÌNH ----
+        // Ô riêng, không dính dáng gì tới ult: đủ 50 Haki và chưa ở trong form là biến được,
+        // kể cả lúc đang full Haki. (Giữ ↓ thì nhánh nhảy vốn bị bỏ qua nên tổ hợp này đang trống.)
+        if (intents.block && intents.jump && this.onGround && !hasAttackIntent
+            && this.moves.transform && !this.formed) {
+          this.startAttack("transform");
+        }
+
         // block (chỉ đỡ đòn nếu không có ý định tấn công)
-        if (intents.block && this.onGround && !hasAttackIntent) {
+        if (this.canAct() && intents.block && this.onGround && !hasAttackIntent) {
           this.blocking = true;
           this.state = "block";
           this.vx *= 0.6;
         }
 
-        if (!this.blocking) {
+        if (!this.blocking && this.canAct()) {
           // di chuyển
           let move = 0;
           if (intents.left) move -= 1;
@@ -660,8 +668,11 @@
             // Giữ ↓ -> lấy biến thể của ô đó. Nếu tướng chưa có biến thể (hoặc file chiêu chưa nạp)
             // thì rơi về đòn gốc, để phím không bị "bấm mà không ra gì".
             let variant = intents.block ? dm[slot] : null;
-            // ↓+skill mà chưa đủ 100 Haki thì trước đây bấm không ra gì -> nay là BIẾN HÌNH (tốn 50)
-            if (intents.block && slot === "special" && this.meter < 100 && this.moves.transform) variant = "transform";
+            // ↓+skill chưa đủ 100 Haki thì ult không ra được -> để đó thành cửa BIẾN HÌNH cho tiện tay.
+            // (Cửa còn lại là ↓+nhảy, dùng được ở mọi mức Haki kể cả khi đang full.)
+            if (intents.block && slot === "special" && this.meter < 100 && this.moves.transform && !this.formed) {
+              variant = "transform";
+            }
             const key = (variant && this.moves[variant]) ? variant : slot;
             this.startAttack(key);
             if (this.state !== "attack") return;
