@@ -371,10 +371,12 @@
       if (!this.canAct()) return;
       const def = this.moves[kind];
       if (!def) return;
-      if (def.meterCost && this.meter < def.meterCost) return; // chưa đủ Haki
-      // SUPER: chỉ khi bình Haki ĐẦY 100% + tung tuyệt chiêu -> đòn mạnh + khựng điện ảnh
-      const isSuper = (kind === "special") && this.meter >= 100;
-      if (def.meterCost) this.meter -= (isSuper ? 100 : def.meterCost);
+      // SUPER: đầy Haki 100% + (tuyệt chiêu HOẶC ↓+skill) -> siêu chiêu (khựng + mạnh)
+      const canSuper = (kind === "special" || kind === "axe" || kind === "asura");
+      const isSuper = canSuper && this.meter >= 100;
+      if (!isSuper && def.meterCost && this.meter < def.meterCost) return; // chưa đủ Haki
+      if (isSuper) this.meter -= 100;
+      else if (def.meterCost) this.meter -= def.meterCost;
       this.state = "attack";
       this.attack = { def, elapsed:0, phase:"startup", hit:new Set(), spawned:false, isSuper };
       this.vx *= 0.2;
@@ -965,7 +967,8 @@
     // Kích hoạt SUPER: khựng hình điện ảnh + luồng sáng hội tụ (Street Fighter style)
     triggerSuper(fighter) {
       this.superFreeze = this.superDur;
-      this.superFocus = { x: fighter.x, y: fighter.y, id: fighter.id, name: fighter.moves.special.name };
+      const name = (fighter.attack && fighter.attack.def) ? fighter.attack.def.name : fighter.moves.special.name;
+      this.superFocus = { x: fighter.x, y: fighter.y, id: fighter.id, name };
       Sound.superFlash();
     },
 
@@ -1138,7 +1141,12 @@
         attacker.attack.hit.add(defender);
         const d = attacker.attack.def;
         const dir = attacker.facing;
-        defender.takeHit(d.dmg, d.knockback, d.launch, dir, false, attacker);
+        const sup = attacker.attack.isSuper;
+        const dmg    = sup ? Math.round(d.dmg * 2.1) : d.dmg;
+        const kb     = sup ? d.knockback * 1.5 : d.knockback;
+        const launch = sup ? (d.launch || 0) * 1.3 : d.launch;
+        defender.takeHit(dmg, kb, launch, dir, sup, attacker);   // sup -> flash + stun mạnh
+        if (sup) { this.flashScreen = 1.3; this.hitstop = Math.max(this.hitstop, 150); this.addHitSpark(hb.x + hb.w * 0.5, defender.y - 70, false, true); }
         attacker.gainMeter(d.meterGain || 0);
       }
     },
@@ -1698,7 +1706,7 @@
           const who = Game[sup];
           who.meter = 100;
           who.facing = sup === "luffy" ? 1 : -1;
-          who.startAttack("special");            // -> triggerSuper
+          who.startAttack(params.get("mv") || "special");   // -> triggerSuper (mv=axe/asura cho ulti 2)
           Game.superFreeze = Game.superDur * (params.get("sf") ? +params.get("sf") : 0.5);
         }
         // dựng cảnh minh hoạ hiệu ứng (combo + vòng xung kích + chớp)
