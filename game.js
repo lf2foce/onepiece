@@ -138,9 +138,9 @@
         const gr = this.w * 1.5;
         const g = ctx.createRadialGradient(0, 0, 4, 0, 0, gr);
         const warm = this.owner && this.owner.id === "luffy";
-        g.addColorStop(0, "rgba(255,255,255,0.9)");
-        g.addColorStop(0.4, warm ? "rgba(255,150,60,0.55)" : "rgba(80,255,160,0.55)");
-        g.addColorStop(1, warm ? "rgba(255,90,40,0)" : "rgba(40,220,120,0)");
+        g.addColorStop(0, warm ? "rgba(255,235,180,0.5)" : "rgba(235,255,240,0.6)");
+        g.addColorStop(0.45, warm ? "rgba(255,130,30,0.5)" : "rgba(80,255,160,0.5)");
+        g.addColorStop(1, warm ? "rgba(255,80,20,0)" : "rgba(40,220,120,0)");
         ctx.fillStyle = g;
         ctx.beginPath(); ctx.arc(0, 0, gr, 0, Math.PI * 2); ctx.fill();
         // vảy sáng lấp lánh
@@ -211,34 +211,84 @@
         ctx.moveTo(-35, 8); ctx.lineTo(-10, 8);
         ctx.stroke();
       } else if (kind === "redhawk") {
-        // Red Hawk - Nắm đấm lửa rực cháy hoành tráng
-        const grd = ctx.createLinearGradient(-60, 0, 60, 0);
-        grd.addColorStop(0, "rgba(255, 50, 0, 0)");
-        grd.addColorStop(0.4, "rgba(255, 90, 0, 0.85)");
-        grd.addColorStop(0.8, "#ff4a00");
-        grd.addColorStop(1, "#ffd23f");
-        ctx.fillStyle = grd;
-        
-        // Vỏ lửa bọc ngoài dạng giọt nước
+        // ---- RED HAWK: nắm đấm bọc lửa hình chim ưng rực cháy ----
+        const fl = this.t / 55;
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+
+        // Đuôi lửa nhiều lớp (comet) vẫy về sau
+        const layers = [
+          { c: "rgba(190,25,0,0.45)",   L: 84, w: 27 },
+          { c: "rgba(255,80,0,0.55)",   L: 68, w: 19 },
+          { c: "rgba(255,160,30,0.72)", L: 52, w: 13 },
+          { c: "rgba(255,232,150,0.92)",L: 36, w: 7 },
+        ];
+        for (let k = 0; k < layers.length; k++) {
+          const L = layers[k].L, w = layers[k].w, wob = Math.sin(fl + k * 0.7) * 4;
+          ctx.fillStyle = layers[k].c;
+          ctx.beginPath();
+          ctx.moveTo(16, -w);
+          ctx.quadraticCurveTo(-L * 0.35, -w - 3 + wob, -L, wob);
+          ctx.quadraticCurveTo(-L * 0.35, w + 3 + wob, 16, w);
+          ctx.quadraticCurveTo(26, 0, 16, -w);
+          ctx.closePath(); ctx.fill();
+        }
+
+        // Hai cánh lửa chim ưng xoè trên/dưới, phần phật
+        for (const s of [-1, 1]) {
+          const wing = 14 + Math.sin(fl * 1.3) * 4;
+          ctx.fillStyle = "rgba(255,110,10,0.42)";
+          ctx.beginPath();
+          ctx.moveTo(2, 0);
+          ctx.quadraticCurveTo(-16, s * (24 + wing), -42, s * (12 + wing));
+          ctx.quadraticCurveTo(-18, s * 7, 2, 0);
+          ctx.closePath(); ctx.fill();
+        }
+
+        // Lưỡi lửa nhỏ lắt lay ở đuôi
+        for (let i = 0; i < 5; i++) {
+          const t = i / 5, bx = 12 - t * 66;
+          const fy = Math.sin(fl * 1.6 + i * 1.4) * (8 + t * 14);
+          ctx.fillStyle = i % 2 ? "rgba(255,150,0,0.5)" : "rgba(255,70,0,0.4)";
+          ctx.beginPath();
+          ctx.moveTo(bx, 0);
+          ctx.quadraticCurveTo(bx - 7, fy, bx - 15, fy * 1.25);
+          ctx.quadraticCurveTo(bx - 5, fy * 0.4, bx, 0);
+          ctx.closePath(); ctx.fill();
+        }
+
+        ctx.globalCompositeOperation = "source-over";
+
+        // Quầng nóng quanh nắm đấm
+        const halo = ctx.createRadialGradient(22, 0, 3, 22, 0, 30);
+        halo.addColorStop(0, "rgba(255,245,200,0.95)");
+        halo.addColorStop(0.5, "rgba(255,120,20,0.65)");
+        halo.addColorStop(1, "rgba(255,60,0,0)");
+        ctx.fillStyle = halo;
+        ctx.beginPath(); ctx.arc(22, 0, 30, 0, Math.PI * 2); ctx.fill();
+
+        // Ống tay áo đỏ + cổ tay da
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "#c92a1c"; ctx.lineWidth = 15;
+        ctx.beginPath(); ctx.moveTo(-24, 0); ctx.lineTo(8, 0); ctx.stroke();
+        ctx.strokeStyle = "#e8a878"; ctx.lineWidth = 11;
+        ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(13, 0); ctx.stroke();
+
+        // Nắm đấm đỏ rực (gradient) + đốt ngón + lõi trắng nóng
+        const fg = ctx.createRadialGradient(20, -4, 3, 23, 3, 18);
+        fg.addColorStop(0, "#fff4cc");
+        fg.addColorStop(0.45, "#ff8a2b");
+        fg.addColorStop(1, "#d1330f");
+        ctx.fillStyle = fg;
+        ctx.beginPath(); ctx.arc(21, 0, 15, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "rgba(140,30,8,0.55)"; ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.moveTo(-60, -12); 
-        ctx.quadraticCurveTo(-10, -32, 45, -18);
-        ctx.quadraticCurveTo(60, 0, 45, 18); 
-        ctx.quadraticCurveTo(-10, 32, -60, 12);
-        ctx.closePath(); ctx.fill();
-        
-        // Lõi lửa trong phát sáng
-        ctx.fillStyle = "#ffaa3f";
-        ctx.beginPath(); ctx.arc(26, 0, 22, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath(); ctx.arc(32, -2, 12, 0, Math.PI*2); ctx.fill();
-        
-        // Vòng hơi nước bọc quanh (Steam rings)
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.ellipse(15, 0, 10, 25, Math.PI*0.1, 0, Math.PI*2);
+        for (let i = 0; i < 3; i++) { ctx.moveTo(27, -6 + i * 6); ctx.lineTo(33, -6 + i * 6); }
         ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,0.9)";
+        ctx.beginPath(); ctx.arc(18, -4, 5.5, 0, Math.PI * 2); ctx.fill();
+
+        ctx.restore();
       } else if (kind === "slash") {
         // Lưỡi chém chân không hình bán nguyệt sắc lẹm
         ctx.strokeStyle = color; ctx.lineWidth = 8; ctx.lineCap = "round";
@@ -1664,7 +1714,14 @@
               vx: 0, vy: 0, life: 500, color: i % 2 ? "#ffd23f" : "#ff6b3f", r: 2 + Math.random() * 3.5 });
           }
           Game.sparks.push({ kind: "ring", x: ix, y: iy, life: 130, life0: 260, r: 6, rMax: isSp ? 60 : 38, color: "#fff3c4" });
-          if (isSp) { Game.flashScreen = 0.5; Game.projectiles.push(new Projectile(Game.luffy, MOVES.luffy.special.proj)); Game.projectiles[0].x = ix - 30; }
+          if (isSp) {
+            Game.flashScreen = 0.5;
+            let pdef = MOVES.luffy.special.proj;
+            if (params.get("psuper")) pdef = Object.assign({}, pdef, { w: pdef.w * 1.6, h: pdef.h * 1.6, super: true });
+            const pr = new Projectile(Game.luffy, pdef);
+            pr.x = ix - 30;
+            Game.projectiles.push(pr);
+          }
           Game.demoFreeze = true;
         }
         Game.announce = null;
