@@ -157,47 +157,80 @@
       const spin = this.t / 90;
 
       if (kind === "gum") {
-        // nắm đấm cao su + tay kéo dài
-        ctx.strokeStyle = "#f2c69b"; ctx.lineWidth = 14; ctx.lineCap = "round";
-        ctx.beginPath(); ctx.moveTo(-60, 0); ctx.lineTo(6, 0); ctx.stroke();
+        // Nắm đấm cao su + tay kéo dài bọc ống tay áo đỏ
+        ctx.strokeStyle = "#e0a06f"; ctx.lineWidth = 14; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(-60, 0); ctx.lineTo(10, 0); ctx.stroke();
+        
+        // Ống tay áo đỏ co giãn ở gốc đấm
+        ctx.strokeStyle = "#e5342e"; ctx.lineWidth = 17;
+        ctx.beginPath(); ctx.moveTo(-75, 0); ctx.lineTo(-45, 0); ctx.stroke();
+        
+        // Nắm đấm tay trước
         ctx.fillStyle = color;
         ctx.beginPath(); ctx.arc(14, 0, 18, 0, Math.PI*2); ctx.fill();
         ctx.fillStyle = "#e0a06f";
         for (let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(24, -8+i*8, 4, 0, Math.PI*2); ctx.fill(); }
+        
+        // Vệt gió lướt
+        ctx.strokeStyle = "rgba(255,255,255,0.45)"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(-90, -10); ctx.lineTo(-50, -10);
+        ctx.moveTo(-90, 10); ctx.lineTo(-50, 10);
+        ctx.stroke();
       } else if (kind === "redhawk") {
-        // nắm đấm lửa
-        const grd = ctx.createLinearGradient(-40,0,40,0);
-        grd.addColorStop(0,"rgba(255,90,30,0)");
-        grd.addColorStop(1,"#ffd23f");
+        // Red Hawk - Nắm đấm lửa rực cháy hoành tráng
+        const grd = ctx.createLinearGradient(-60, 0, 60, 0);
+        grd.addColorStop(0, "rgba(255, 50, 0, 0)");
+        grd.addColorStop(0.4, "rgba(255, 90, 0, 0.85)");
+        grd.addColorStop(0.8, "#ff4a00");
+        grd.addColorStop(1, "#ffd23f");
         ctx.fillStyle = grd;
+        
+        // Vỏ lửa bọc ngoài dạng giọt nước
         ctx.beginPath();
-        ctx.moveTo(-46,-8); ctx.quadraticCurveTo(-10,-26,30,-14);
-        ctx.quadraticCurveTo(40,0,30,14); ctx.quadraticCurveTo(-10,26,-46,8);
+        ctx.moveTo(-60, -12); 
+        ctx.quadraticCurveTo(-10, -32, 45, -18);
+        ctx.quadraticCurveTo(60, 0, 45, 18); 
+        ctx.quadraticCurveTo(-10, 32, -60, 12);
         ctx.closePath(); ctx.fill();
-        ctx.fillStyle = "#ff9a3f";
-        ctx.beginPath(); ctx.arc(20, 0, 20, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = "#ffe08a";
-        ctx.beginPath(); ctx.arc(24, -3, 10, 0, Math.PI*2); ctx.fill();
+        
+        // Lõi lửa trong phát sáng
+        ctx.fillStyle = "#ffaa3f";
+        ctx.beginPath(); ctx.arc(26, 0, 22, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath(); ctx.arc(32, -2, 12, 0, Math.PI*2); ctx.fill();
+        
+        // Vòng hơi nước bọc quanh (Steam rings)
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.ellipse(15, 0, 10, 25, Math.PI*0.1, 0, Math.PI*2);
+        ctx.stroke();
       } else if (kind === "slash") {
-        // lưỡi chém bay hình lưỡi liềm
+        // Lưỡi chém chân không hình bán nguyệt sắc lẹm
         ctx.strokeStyle = color; ctx.lineWidth = 8; ctx.lineCap = "round";
-        for (let i=-1;i<=1;i++){
+        for (let i=-1; i<=1; i++){
           ctx.globalAlpha = 1 - Math.abs(i)*0.35;
           ctx.beginPath();
-          ctx.arc(i*10, 0, 30, -Math.PI*0.55, Math.PI*0.55);
+          ctx.arc(i*12, 0, 30, -Math.PI*0.55, Math.PI*0.55);
           ctx.stroke();
         }
         ctx.globalAlpha = 1;
+        
+        // Lõi trắng chém lẹm sắc bén
+        ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(6, 0, 28, -Math.PI*0.45, Math.PI*0.45);
+        ctx.stroke();
       } else if (kind === "tatsumaki") {
-        // lốc xoáy rồng xanh
-        ctx.rotate(spin);
-        for (let i=0;i<6;i++){
-          const r = 12 + i*8;
-          ctx.globalAlpha = 0.85 - i*0.1;
-          ctx.strokeStyle = i%2 ? color : "#bfffdb";
-          ctx.lineWidth = 7;
+        // Long Quyển Phong - Cơn lốc rồng xanh cuộn trào
+        ctx.rotate(spin * 1.4);
+        for (let i=0; i<8; i++){
+          const r = 10 + i*11;
+          ctx.globalAlpha = 0.92 - i*0.11;
+          ctx.strokeStyle = i%2 ? color : "#ffffff";
+          ctx.lineWidth = 5 + i*1.2;
           ctx.beginPath();
-          ctx.ellipse(0, 0, r, r*1.6, spin*0.5, 0, Math.PI*2);
+          ctx.ellipse(0, i*4 - 15, r, r*1.8, spin*0.35 + i*0.2, 0, Math.PI*2);
           ctx.stroke();
         }
         ctx.globalAlpha = 1;
@@ -424,8 +457,78 @@
     }
 
     // ---------------------------------------------------------- VẼ NHÂN VẬT
+    drawAura() {
+      if (this.state === "ko") return;
+      const f = this;
+      const isSpecialAttack = f.state === "attack" && f.attack && f.attack.def.key === "special";
+      if (f.meter < 50 && !isSpecialAttack) return;
+
+      ctx.save();
+      // Vẽ Aura tại tọa độ nhân vật
+      ctx.translate(f.x, f.y);
+      ctx.scale(f.facing, 1);
+
+      const anim = f.animTime * 12;
+      const intensity = isSpecialAttack ? 1.6 : (f.meter >= 100 ? 1.15 : 0.75);
+      
+      // Sử dụng chế độ hòa trộn màn hình (screen) để tạo vệt phát sáng cộng gộp rực rỡ
+      ctx.globalCompositeOperation = "screen";
+      
+      const numFlames = 6;
+      for (let i = 0; i < numFlames; i++) {
+        const angle = (i / numFlames) * Math.PI * 2 + anim * 0.04;
+        const radiusX = 26 + Math.sin(anim * 0.35 + i) * 6 * intensity;
+        const radiusY = 64 + Math.cos(anim * 0.3 + i * 1.5) * 12 * intensity;
+        const offsetY = -f.height / 2 - 8 + Math.sin(anim * 0.45 + i) * 6 * intensity;
+        
+        ctx.save();
+        ctx.translate(0, offsetY);
+        ctx.rotate(angle * 0.08);
+        
+        const grad = ctx.createRadialGradient(0, 0, 5, 0, 0, radiusY);
+        if (f.id === "luffy") {
+          // Luffy: Aura nhiệt lửa Gear 2 màu đỏ hồng rực nóng
+          grad.addColorStop(0, "rgba(255, 230, 240, 0.95)");
+          grad.addColorStop(0.25, "rgba(255, 90, 110, 0.75)");
+          grad.addColorStop(0.55, "rgba(255, 40, 40, 0.32)");
+          grad.addColorStop(1, "rgba(255, 100, 50, 0)");
+        } else {
+          // Zoro: Aura quỷ kiếm khí phong vân màu xanh lục bảo huyền bí
+          grad.addColorStop(0, "rgba(230, 255, 240, 0.95)");
+          grad.addColorStop(0.25, "rgba(100, 255, 180, 0.75)");
+          grad.addColorStop(0.55, "rgba(30, 180, 90, 0.32)");
+          grad.addColorStop(1, "rgba(15, 80, 35, 0)");
+        }
+        
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, radiusX, radiusY, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Các đốm lửa/kiếm khí Haki bay lơ lửng bốc lên trên
+      ctx.globalCompositeOperation = "source-over";
+      for (let i = 0; i < 4; i++) {
+        const seed = Math.sin(i * 12.7 + Math.floor(anim * 0.12));
+        const seedY = (anim * 0.42 + i * 24) % 105;
+        const px = Math.sin(i * 6.5 + anim * 0.07) * 20;
+        const py = -seedY - 10;
+        const size = 1.8 + Math.abs(seed) * 2.5;
+        ctx.fillStyle = f.id === "luffy" ? "#ffd23f" : "#bfffdb";
+        ctx.beginPath();
+        ctx.arc(px, py, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
     draw() {
       const s = this;
+      
+      // Vẽ Aura Haki tuyệt đẹp phía sau bóng nhân vật
+      s.drawAura();
+
       ctx.save();
       // bóng đổ
       ctx.fillStyle = "rgba(0,0,0,.28)";
@@ -478,17 +581,45 @@
     // ---- Helper dùng chung: hai chân + giày ----
     drawLegs(cfg, legs) {
       const one = (hipX, ang, back) => {
-        const kneeX = hipX + Math.sin(ang) * 9;
-        const footX = kneeX + Math.sin(ang) * 3 + 2;
+        const kneeX = hipX + Math.sin(ang) * 11;
+        const footX = kneeX + Math.sin(ang) * 4 + 3;
         ctx.lineCap = "round"; ctx.lineJoin = "round";
+        
+        // Vẽ Đùi (quần)
         ctx.strokeStyle = back ? cfg.pantsSh : cfg.pants;
-        ctx.lineWidth = 16;
+        ctx.lineWidth = 18;
         ctx.beginPath();
         ctx.moveTo(hipX, -48);
-        ctx.lineTo(kneeX, -26);
-        ctx.lineTo(footX, -10);
+        ctx.lineTo(kneeX, -27);
         ctx.stroke();
-        // giày
+        
+        if (cfg.isLuffy) {
+          // Luffy có gấu lông trắng của quần short và phần bắp chân da trần!
+          ctx.strokeStyle = back ? "#dcdcdc" : "#ffffff";
+          ctx.lineWidth = 20;
+          ctx.beginPath();
+          ctx.moveTo(kneeX - Math.sin(ang)*1.5, -28);
+          ctx.lineTo(kneeX + Math.sin(ang)*1.5, -25);
+          ctx.stroke();
+          
+          // Bắp chân (màu da trần)
+          ctx.strokeStyle = back ? cfg.skinSh : cfg.skin;
+          ctx.lineWidth = 12;
+          ctx.beginPath();
+          ctx.moveTo(kneeX, -26);
+          ctx.lineTo(footX, -10);
+          ctx.stroke();
+        } else {
+          // Zoro mặc quần võ phục đen phủ dài liên tục
+          ctx.strokeStyle = back ? cfg.pantsSh : cfg.pants;
+          ctx.lineWidth = 17;
+          ctx.beginPath();
+          ctx.moveTo(kneeX, -28);
+          ctx.lineTo(footX, -10);
+          ctx.stroke();
+        }
+        
+        // Vẽ Giày / Dép rơm
         ctx.fillStyle = back ? cfg.shoeSh : cfg.shoe;
         roundRect(footX - 7, -11, 22, 9, 4); ctx.fill();
         ctx.fillStyle = cfg.sole;
@@ -516,12 +647,12 @@
       ctx.fillStyle = skinSh || skin;
       ctx.beginPath(); ctx.arc(-14, -55, 5.5, 0, Math.PI * 2); ctx.fill();
     }
-
     // ---- LUFFY ----
     drawLuffy(flash) {
       const swing = this.armSwing();
       const legs = this.legPose();
-      const bob = this.state === "walk" ? Math.abs(Math.sin(this.walkPhase)) * 3 : 0;
+      // Nhịp thở phập phồng sinh động ở trạng thái đứng yên (idle) hoặc di chuyển (walk)
+      const bob = this.state === "idle" ? Math.sin(this.animTime * 4.5) * 2.5 : (this.state === "walk" ? Math.abs(Math.sin(this.walkPhase)) * 3.5 : 0);
       const skin    = flash ? "#ffc2ad" : "#f6cfa4";
       const skinSh  = flash ? "#f0a48f" : "#e0ac7f";
       const red     = flash ? "#ff7358" : "#e5342e";
@@ -534,7 +665,7 @@
       ctx.lineJoin = "round"; ctx.lineCap = "round";
 
       this.drawBackArm(skin, skinSh);
-      this.drawLegs({ pants: blue, pantsSh: blueSh, shoe: "#efe2c8", shoeSh: "#cdbf9f", sole: "#a98d5f" }, legs);
+      this.drawLegs({ pants: blue, pantsSh: blueSh, shoe: "#efe2c8", shoeSh: "#cdbf9f", sole: "#a98d5f", isLuffy: true, skin: skin, skinSh: skinSh }, legs);
 
       // ---- áo vest đỏ mở, để lộ ngực ----
       const vg = ctx.createLinearGradient(-15, -90, 15, -52);
@@ -543,6 +674,14 @@
       ctx.beginPath();
       ctx.moveTo(-16, -90); ctx.quadraticCurveTo(0, -95, 16, -90);
       ctx.lineTo(13, -54); ctx.quadraticCurveTo(0, -50, -13, -54); ctx.closePath(); ctx.fill();
+      
+      // Cúc áo vàng lấp lánh trên vest đỏ
+      ctx.fillStyle = "#ffd23f";
+      ctx.beginPath();
+      ctx.arc(-11, -68, 2.5, 0, Math.PI*2);
+      ctx.arc(11, -68, 2.5, 0, Math.PI*2);
+      ctx.fill();
+
       // ngực trần (chữ V)
       ctx.fillStyle = skin;
       ctx.beginPath(); ctx.moveTo(-8, -90); ctx.lineTo(8, -90); ctx.lineTo(0, -58); ctx.closePath(); ctx.fill();
@@ -559,6 +698,17 @@
       ctx.fillStyle = "#ffd23f";
       roundRect(-15, -58, 30, 7, 3); ctx.fill();
       ctx.fillStyle = "#e0b02e"; ctx.fillRect(-15, -53, 30, 2);
+      
+      // Dải thắt lưng vàng cột nút rủ xuống đung đưa theo nhịp thở/di chuyển
+      const sashWiggle = (this.state === "walk") ? Math.sin(this.walkPhase * 2) * 5 : Math.sin(this.animTime * 4.5) * 2;
+      ctx.fillStyle = "#ffd23f";
+      ctx.beginPath();
+      ctx.moveTo(2, -54);
+      ctx.quadraticCurveTo(sashWiggle - 3, -42, sashWiggle - 7, -25);
+      ctx.lineTo(sashWiggle - 1, -25);
+      ctx.quadraticCurveTo(sashWiggle - 1, -42, 7, -54);
+      ctx.closePath(); ctx.fill();
+
       const sg = ctx.createLinearGradient(0, -52, 0, -40);
       sg.addColorStop(0, blue); sg.addColorStop(1, blueSh);
       ctx.fillStyle = sg;
@@ -572,6 +722,11 @@
     }
 
     drawHeadLuffy(skin, skinSh, flash) {
+      // Chuyển động nảy đầu nhẹ nhàng khi đứng thở yên (Idle Head Bobbing)
+      const headBob = this.state === "idle" ? Math.sin(this.animTime * 4.5) * 0.8 : 0;
+      ctx.save();
+      ctx.translate(0, headBob);
+
       // cổ
       ctx.fillStyle = skinSh; roundRect(-4, -98, 8, 10, 2); ctx.fill();
       // mặt (đổ bóng)
@@ -594,6 +749,17 @@
       ctx.quadraticCurveTo(-10, -111, -15, -104);
       ctx.closePath(); ctx.fill();
 
+      // Vẽ chiếc mũi dễ thương kiểu anime
+      ctx.strokeStyle = skinSh; ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.moveTo(1, -104); ctx.lineTo(3, -103); ctx.stroke();
+
+      // Đôi má hồng ửng dễ thương của nhân vật anime sống động
+      ctx.fillStyle = "rgba(255, 100, 100, 0.32)";
+      ctx.beginPath();
+      ctx.ellipse(8, -101, 3.2, 1.6, Math.PI * 0.1, 0, Math.PI * 2);
+      ctx.ellipse(-4, -102, 2.2, 1.3, -Math.PI * 0.1, 0, Math.PI * 2);
+      ctx.fill();
+
       // mắt to tròn
       ctx.fillStyle = "#fff";
       ctx.beginPath(); ctx.ellipse(6, -107, 3.6, 4.4, 0, 0, Math.PI * 2); ctx.fill();
@@ -610,7 +776,8 @@
       ctx.moveTo(-1, -99); ctx.quadraticCurveTo(6, -90, 13, -99);
       ctx.quadraticCurveTo(6, -96, -1, -99); ctx.closePath(); ctx.fill();
       ctx.strokeStyle = "#7a2a2a"; ctx.lineWidth = 1.6;
-      ctx.beginPath(); ctx.moveTo(-1, -99); ctx.quadraticCurveTo(6, -90, 13, -99); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-1, -99); ctx.quadraticCurveTo(6, -90, 13, -99);
+      ctx.stroke();
 
       // ---- mũ rơm ----
       const brimY = -117;
@@ -625,6 +792,17 @@
       // sợi rơm
       ctx.strokeStyle = "rgba(150,110,40,.4)"; ctx.lineWidth = 1;
       for (let i = -4; i <= 4; i++) { ctx.beginPath(); ctx.moveTo(i * 5, brimY - 1); ctx.lineTo(i * 6, brimY + 6); ctx.stroke(); }
+
+      // Dây nơ đỏ buộc mũ rơm bay đung đưa trong gió ở phía sau gáy cổ
+      const bowWiggle = Math.sin(this.animTime * 6) * 3;
+      ctx.fillStyle = "#cf3b3b";
+      ctx.beginPath();
+      ctx.moveTo(-9, brimY - 2);
+      ctx.quadraticCurveTo(-17, brimY + 3 + bowWiggle, -24, brimY + 14 + bowWiggle * 1.5);
+      ctx.quadraticCurveTo(-15, brimY + 11, -7, brimY - 2);
+      ctx.closePath(); ctx.fill();
+
+      ctx.restore();
     }
 
     drawFrontArmLuffy(swing, skin, skinSh) {
@@ -661,7 +839,8 @@
     drawZoro(flash) {
       const swing = this.armSwing();
       const legs = this.legPose();
-      const bob = this.state === "walk" ? Math.abs(Math.sin(this.walkPhase)) * 3 : 0;
+      // Nhịp thở phập phồng sinh động ở trạng thái đứng yên (idle) hoặc di chuyển (walk)
+      const bob = this.state === "idle" ? Math.sin(this.animTime * 4.5) * 2.5 : (this.state === "walk" ? Math.abs(Math.sin(this.walkPhase)) * 3.5 : 0);
       const skin    = flash ? "#ffc2ad" : "#f0c49a";
       const skinSh  = flash ? "#f0a48f" : "#d9a877";
       const white   = flash ? "#ffffff" : "#f2f2ea";
@@ -669,12 +848,15 @@
       const green   = flash ? "#59d488" : "#2ea15a";
       const greenSh = flash ? "#3aa564" : "#1c6e3c";
 
+      // Trạng thái quấn khăn nghiêm túc: khi đầy nộ (>50%) hoặc đang ra chiêu
+      const isSerious = (this.meter >= 50 || this.state === "attack");
+
       ctx.save();
       ctx.translate(0, -bob);
       ctx.lineJoin = "round"; ctx.lineCap = "round";
 
-      this.drawSwords();                                   // 2 kiếm giắt hông (phía sau)
-      this.drawBackArm(skin, skinSh, { bandana: true });   // tay sau + băng đen bắp tay
+      this.drawSwords();                                   // 3 kiếm giắt hông huyền thoại phía sau
+      this.drawBackArm(skin, skinSh, { bandana: !isSerious }); // Tay sau (Chỉ buộc khăn ở bắp tay nếu không quấn đầu)
       this.drawLegs({ pants: flash ? "#3a3d47" : "#26282e", pantsSh: "#181a1f",
                       shoe: "#2a2c33", shoeSh: "#17181d", sole: "#0e0f12" }, legs);
 
@@ -685,6 +867,23 @@
       ctx.beginPath();
       ctx.moveTo(-16, -90); ctx.quadraticCurveTo(0, -95, 16, -90);
       ctx.lineTo(15, -62); ctx.lineTo(-15, -62); ctx.closePath(); ctx.fill();
+      
+      // Vết sẹo chém chéo khổng lồ huyền thoại của Mihawk trên ngực áo trắng
+      ctx.strokeStyle = "#9a2a1a"; ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(-11, -84); ctx.lineTo(10, -66);
+      ctx.stroke();
+      // Các nốt khâu dọc vết sẹo
+      ctx.strokeStyle = whiteSh; ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const sx = -11 + i * 5.25;
+        const sy = -84 + i * 4.5;
+        ctx.moveTo(sx - 2.5, sy + 3);
+        ctx.lineTo(sx + 2.5, sy - 3);
+      }
+      ctx.stroke();
+
       // cổ áo hở (da)
       ctx.fillStyle = skin;
       ctx.beginPath(); ctx.moveTo(-6, -90); ctx.lineTo(6, -90); ctx.lineTo(0, -77); ctx.closePath(); ctx.fill();
@@ -702,27 +901,51 @@
       ctx.moveTo(-16, -50); ctx.lineTo(16, -50);
       ctx.stroke();
 
-      this.drawHeadZoro(skin, skinSh, green, greenSh, flash);
+      this.drawHeadZoro(skin, skinSh, green, greenSh, flash, isSerious);
       this.drawFrontArmZoro(swing, skin, skinSh, flash);
 
       ctx.restore();
     }
 
     drawSwords() {
-      const cols = [["#c0392b", "#7a2418"], ["#2c3e50", "#1a252f"]];
-      for (let i = 0; i < 2; i++) {
-        const bx = -15 - i * 6, top = -60;
-        ctx.strokeStyle = i === 0 ? "#3a1f16" : "#1a2530";
-        ctx.lineWidth = 6; ctx.lineCap = "round";
-        ctx.beginPath(); ctx.moveTo(bx, top); ctx.lineTo(bx - 9, top + 40); ctx.stroke();
-        ctx.strokeStyle = cols[i][0]; ctx.lineWidth = 5;
-        ctx.beginPath(); ctx.moveTo(bx + 3, top - 10); ctx.lineTo(bx, top + 1); ctx.stroke();
-        ctx.fillStyle = "#d4a017";
-        ctx.beginPath(); ctx.arc(bx + 1, top - 1, 3, 0, Math.PI * 2); ctx.fill();
+      // 3 thanh bảo kiếm giắt hông: Wado Ichimonji (trắng), Shusui (đen răng cưa đỏ), Sandai Kitetsu (đỏ)
+      const swords = [
+        { sheath: "#fefefe", wrap: "#ffffff", tsuba: "#ffd700" }, // Wado Ichimonji
+        { sheath: "#181716", wrap: "#800000", tsuba: "#caa010" }, // Shusui
+        { sheath: "#b81a0e", wrap: "#202020", tsuba: "#caa010" }  // Sandai Kitetsu
+      ];
+      for (let i = 0; i < 3; i++) {
+        const s = swords[i];
+        const bx = -13 - i * 5;
+        const top = -58 + i * 2.2;
+        const angle = 0.22 + i * 0.05;
+        ctx.save();
+        ctx.translate(bx, top);
+        ctx.rotate(angle);
+        
+        // Vỏ kiếm
+        ctx.strokeStyle = s.sheath;
+        ctx.lineWidth = 5.2; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-11, 35); ctx.stroke();
+        
+        // Chuôi kiếm
+        ctx.strokeStyle = s.wrap;
+        ctx.lineWidth = 4.2;
+        ctx.beginPath(); ctx.moveTo(3, -9); ctx.lineTo(0, 0); ctx.stroke();
+        
+        // Tsuba (Kiếm cách vàng)
+        ctx.fillStyle = s.tsuba;
+        ctx.beginPath(); ctx.arc(1, -1, 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
       }
     }
 
-    drawHeadZoro(skin, skinSh, green, greenSh, flash) {
+    drawHeadZoro(skin, skinSh, green, greenSh, flash, isSerious) {
+      // Chuyển động nảy đầu nhẹ nhàng khi đứng thở yên (Idle Head Bobbing)
+      const headBob = this.state === "idle" ? Math.sin(this.animTime * 4.5) * 0.8 : 0;
+      ctx.save();
+      ctx.translate(0, headBob);
+
       // cổ
       ctx.fillStyle = skinSh; roundRect(-4, -98, 8, 10, 2); ctx.fill();
       // mặt
@@ -730,41 +953,69 @@
       fg.addColorStop(0, skin); fg.addColorStop(1, skinSh);
       ctx.fillStyle = fg;
       ctx.beginPath(); ctx.arc(0, -107, 15, 0, Math.PI * 2); ctx.fill();
-      // tai + 3 khuyên vàng
+      // tai + 3 khuyên vàng bên tai trái
       ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(-13, -105, 3, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#f5c518";
       for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(-14, -100 + i * 4, 1.6, 0, Math.PI * 2); ctx.fill(); }
 
-      // tóc xanh: nền ôm đầu + gai trên đỉnh (đầy đặn, không hở nền)
-      const hairCol = flash ? "#7de0a4" : green;
-      ctx.fillStyle = hairCol;
-      ctx.beginPath();
-      ctx.arc(0, -107, 15, Math.PI * 1.03, Math.PI * 1.97);   // nền dome
-      ctx.closePath(); ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(-15, -108);
-      ctx.lineTo(-13, -121); ctx.lineTo(-7, -111);
-      ctx.lineTo(-2, -124); ctx.lineTo(3, -111);
-      ctx.lineTo(9, -122); ctx.lineTo(14, -110);
-      ctx.lineTo(15, -108);
-      ctx.closePath(); ctx.fill();
-      // khối tối nhẹ tạo chiều sâu
-      ctx.fillStyle = greenSh;
-      ctx.beginPath(); ctx.moveTo(-2, -124); ctx.lineTo(3, -111); ctx.lineTo(-1, -112); ctx.closePath(); ctx.fill();
+      if (isSerious) {
+        // --- BANDANA ĐEN (Trạng thái chiến đấu quấn khăn bandana huyền thoại) ---
+        ctx.fillStyle = flash ? "#3d404a" : "#1e1e24";
+        // Dome quấn quanh đầu
+        ctx.beginPath();
+        ctx.arc(0, -107, 15, Math.PI * 1.0, Math.PI * 2.0);
+        ctx.closePath(); ctx.fill();
+        // Viền thắt băng đô quấn đầu bọc ngang trán
+        roundRect(-16, -112, 32, 5.5, 1.8); ctx.fill();
+        
+        // Đuôi dây thắt nút ruy-băng của khăn bay đung đưa sau gáy
+        const bandanaWiggle = Math.sin(this.animTime * 7.5) * 3.5;
+        ctx.strokeStyle = flash ? "#3d404a" : "#121216";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(-11, -108);
+        ctx.quadraticCurveTo(-21, -108 + bandanaWiggle, -27, -101 + bandanaWiggle * 1.4);
+        ctx.moveTo(-11, -108);
+        ctx.quadraticCurveTo(-19, -102 - bandanaWiggle, -24, -95 - bandanaWiggle * 1.4);
+        ctx.stroke();
+      } else {
+        // --- TÓC XANH LỤC BẢO (Bình thường đầu trần) ---
+        const hairCol = flash ? "#7de0a4" : green;
+        ctx.fillStyle = hairCol;
+        ctx.beginPath();
+        ctx.arc(0, -107, 15, Math.PI * 1.03, Math.PI * 1.97);   // nền dome ôm đầu
+        ctx.closePath(); ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(-15, -108);
+        ctx.lineTo(-13, -121); ctx.lineTo(-7, -111);
+        ctx.lineTo(-2, -124); ctx.lineTo(3, -111);
+        ctx.lineTo(9, -122); ctx.lineTo(14, -110);
+        ctx.lineTo(15, -108);
+        ctx.closePath(); ctx.fill();
+        // mảng bóng tóc tạo chiều sâu 3D gồ ghề của các gai tóc
+        ctx.fillStyle = greenSh;
+        ctx.beginPath(); ctx.moveTo(-2, -124); ctx.lineTo(3, -111); ctx.lineTo(-1, -112); ctx.closePath(); ctx.fill();
+      }
 
-      // mắt nghiêm nghị
+      // Vẽ chiếc mũi dễ thương kiểu anime nghiêm nghị
+      ctx.strokeStyle = skinSh; ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.moveTo(1, -103); ctx.lineTo(3, -102); ctx.stroke();
+
+      // mắt nghiêm nghị sát khí
       ctx.fillStyle = "#fff";
       ctx.beginPath(); ctx.ellipse(6, -106, 3, 3.4, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#15151c";
       ctx.beginPath(); ctx.arc(6.6, -106, 1.7, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = "#20242b"; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(2.5, -112); ctx.lineTo(10.5, -111); ctx.stroke();
-      // sẹo dọc qua mắt
+      // sẹo dọc qua mắt trái
       ctx.strokeStyle = "#b5493a"; ctx.lineWidth = 1.8;
       ctx.beginPath(); ctx.moveTo(6, -114); ctx.lineTo(6, -101); ctx.stroke();
-      // miệng nghiêm
+      // miệng ngậm chặt nghiêm túc
       ctx.strokeStyle = "#6a2626"; ctx.lineWidth = 1.8;
       ctx.beginPath(); ctx.moveTo(2, -99); ctx.lineTo(10, -99); ctx.stroke();
+
+      ctx.restore();
     }
 
     drawFrontArmZoro(swing, skin, skinSh, flash) {
@@ -773,27 +1024,41 @@
       ctx.save();
       ctx.translate(12, -82);
       ctx.rotate(ang);
-      // cánh tay (2 đốt)
+      // cánh tay (2 đốt cơ bắp)
       ctx.strokeStyle = skin; ctx.lineCap = "round"; ctx.lineJoin = "round";
       ctx.lineWidth = 11;
       ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(12, 3); ctx.lineTo(24, 3); ctx.stroke();
       ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(24, 3, 5.5, 0, Math.PI * 2); ctx.fill();
 
-      // ---- katana ----
+      // ---- katana bảo kiếm ----
       ctx.translate(24, 3);
-      ctx.strokeStyle = "#2c7a3f"; ctx.lineWidth = 6;   // chuôi bọc xanh
+      ctx.strokeStyle = "#2c7a3f"; ctx.lineWidth = 6;   // chuôi bọc chỉ xanh lục
       ctx.beginPath(); ctx.moveTo(-6, 0); ctx.lineTo(6, 0); ctx.stroke();
-      ctx.fillStyle = "#d4a017"; ctx.fillRect(6, -4, 3, 8);   // tsuba
+      ctx.fillStyle = "#d4a017"; ctx.fillRect(6, -4, 3, 8);   // Tsuba vàng hình hoa mai
+      
+      // Lưỡi kiếm sáng loáng tỏa vầng hào quang nhẹ khi vung đâm
       const bg = ctx.createLinearGradient(9, 0, 66, 0);
       bg.addColorStop(0, "#cfdae4"); bg.addColorStop(0.5, "#ffffff"); bg.addColorStop(1, "#eef4fa");
+      
+      if (attacking) {
+        // Tỏa kiếm khí phát sáng neon màu xanh rồng bao bọc lưỡi kiếm cực ngầu
+        ctx.shadowColor = "#39d67e";
+        ctx.shadowBlur = 11;
+      }
       ctx.strokeStyle = bg; ctx.lineWidth = 5.5; ctx.lineCap = "round";
       ctx.beginPath(); ctx.moveTo(9, -1); ctx.lineTo(66, -4); ctx.stroke();
+      ctx.shadowBlur = 0; // Tắt phát sáng đổ bóng để không ảnh hưởng chi tiết khác
+      
       ctx.strokeStyle = "rgba(120,140,160,.6)"; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(9, -3); ctx.lineTo(64, -6); ctx.stroke();
-      // ánh chém
+      
+      // Vệt chém hình bán nguyệt kép (Core trắng ẩn sâu trong luồng khí xanh) tỏa rộng
       if (attacking && this.attack.def.type === "melee" && this.attack.phase !== "startup") {
-        ctx.strokeStyle = "rgba(190,255,215,.55)"; ctx.lineWidth = 12;
-        ctx.beginPath(); ctx.arc(-6, 0, 54, -0.7, 0.7); ctx.stroke();
+        ctx.strokeStyle = "rgba(120, 255, 180, 0.6)"; ctx.lineWidth = 15;
+        ctx.beginPath(); ctx.arc(-6, 0, 56, -0.85, 0.85); ctx.stroke();
+        
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.88)"; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(-6, 0, 56, -0.65, 0.65); ctx.stroke();
       }
       ctx.restore();
     }
@@ -1170,30 +1435,70 @@
     },
 
     drawBackground() {
-      // trời
+      // trời hoàng hôn đậm chất anime hải tặc đầy mộng mơ
       const sky = ctx.createLinearGradient(0,0,0,GROUND);
-      sky.addColorStop(0,"#1a2a5c");
-      sky.addColorStop(0.6,"#3a5aa8");
+      sky.addColorStop(0,"#141f45");
+      sky.addColorStop(0.45,"#253e85");
+      sky.addColorStop(0.85,"#c26857");
       sky.addColorStop(1,"#e8a86a");
       ctx.fillStyle = sky;
       ctx.fillRect(0,0,W,GROUND+40);
 
+      // Tia nắng mặt trời lung linh (Sunbeams) tỏa nhẹ nhẹ
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      ctx.fillStyle = "rgba(255, 230, 180, 0.04)";
+      const sunX = W * 0.5, sunY = GROUND - 40;
+      for (let i = 0; i < 6; i++) {
+        const angle = 0.22 + i * 0.52 + Math.sin(this.animT * 0.012) * 0.12;
+        ctx.beginPath();
+        ctx.moveTo(sunX, sunY);
+        ctx.arc(sunX, sunY, 450, angle - 0.14, angle + 0.14);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+
       // mặt trời
-      ctx.fillStyle = "rgba(255,220,140,.9)";
-      ctx.beginPath(); ctx.arc(W*0.5, GROUND-40, 60, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = "rgba(255,235,180,.25)";
-      ctx.beginPath(); ctx.arc(W*0.5, GROUND-40, 100, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "rgba(255,220,140,.92)";
+      ctx.beginPath(); ctx.arc(sunX, sunY, 60, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "rgba(255,235,180,.26)";
+      ctx.beginPath(); ctx.arc(sunX, sunY, 105, 0, Math.PI*2); ctx.fill();
+
+      // Mây cuộn trôi mịn màng bồng bềnh trôi parallax trong gió chiều hải trình
+      const drawCloud = (cx, cy, size) => {
+        ctx.beginPath();
+        ctx.arc(cx, cy, size, 0, Math.PI * 2);
+        ctx.arc(cx + size * 0.6, cy - size * 0.3, size * 0.8, 0, Math.PI * 2);
+        ctx.arc(cx - size * 0.6, cy - size * 0.2, size * 0.7, 0, Math.PI * 2);
+        ctx.arc(cx + size * 1.2, cy, size * 0.6, 0, Math.PI * 2);
+        ctx.arc(cx - size * 1.2, cy, size * 0.5, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.fill();
+      };
+      // Đám mây 1
+      ctx.fillStyle = "rgba(255,255,255,.09)";
+      drawCloud((W * 0.2 + (this.animT * 0.22)) % (W + 160) - 80, GROUND - 180, 35);
+      // Đám mây 2
+      ctx.fillStyle = "rgba(255,255,255,.05)";
+      drawCloud((W * 0.72 + (this.animT * 0.11)) % (W + 140) - 70, GROUND - 250, 26);
 
       // biển
-      ctx.fillStyle = "#2f8fd0";
+      ctx.fillStyle = "#2274b4";
       ctx.fillRect(0, GROUND-70, W, 70);
-      ctx.fillStyle = "rgba(255,255,255,.18)";
-      for (let i=0;i<8;i++){
-        ctx.fillRect((i*140 + (this.animT||0)) % W - 40, GROUND-56 + (i%3)*12, 60, 3);
+      
+      // Sóng biển dập dềnh lấp lánh phản chiếu ánh tà dương hải trình sinh động
+      ctx.fillStyle = "rgba(255,255,255,.20)";
+      for (let i=0; i<10; i++){
+        const wx = (i * 120 + this.animT * 0.8) % (W + 100) - 50;
+        const wy = GROUND - 64 + (i % 3) * 16;
+        const ww = 40 + Math.sin(this.animT * 0.05 + i) * 15;
+        roundRect(wx, wy, ww, 3.5, 1.5);
+        ctx.fill();
       }
 
-      // thuyền Going Merry (bóng xa)
-      ctx.fillStyle = "rgba(90,60,30,.9)";
+      // thuyền Going Merry (bóng xa chân trời)
+      ctx.fillStyle = "rgba(90,60,30,.92)";
       ctx.beginPath();
       ctx.moveTo(W*0.72, GROUND-58); ctx.lineTo(W*0.86, GROUND-58);
       ctx.lineTo(W*0.83, GROUND-42); ctx.lineTo(W*0.75, GROUND-42); ctx.closePath(); ctx.fill();
@@ -1201,13 +1506,45 @@
       ctx.fillRect(W*0.785, GROUND-96, 3, 40);
       ctx.beginPath(); ctx.moveTo(W*0.79, GROUND-92); ctx.lineTo(W*0.83, GROUND-72); ctx.lineTo(W*0.79, GROUND-72); ctx.fill();
 
-      // sàn đấu (boong tàu gỗ)
-      ctx.fillStyle = "#7a4a24";
+      // sàn đấu (boong tàu gỗ Going Merry cổ kính)
+      ctx.fillStyle = "#633816"; // Nền gỗ nâu sẫm
       ctx.fillRect(0, GROUND, W, H-GROUND);
-      ctx.fillStyle = "#8a5a2e";
-      for (let x=0; x<W; x+=48) ctx.fillRect(x, GROUND, 44, H-GROUND);
-      ctx.fillStyle = "rgba(0,0,0,.25)";
-      ctx.fillRect(0, GROUND, W, 5);
+      
+      // Vẽ các đường nứt tấm ván ngang boong tàu
+      ctx.strokeStyle = "#49260c";
+      ctx.lineWidth = 2.5;
+      for (let y = GROUND + 15; y < H; y += 18) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+      
+      // Hiệu ứng đổ bóng chuyển màu giữa các tấm ván boong tàu
+      ctx.fillStyle = "rgba(255,255,255,0.032)";
+      for (let y = GROUND; y < H; y += 36) {
+        ctx.fillRect(0, y, W, 18);
+      }
+      
+      // Các khớp nối ván dọc so le nhau sinh động chân thực
+      ctx.strokeStyle = "#49260c"; ctx.lineWidth = 1.5;
+      for (let x = 0; x < W + 100; x += 110) {
+        const offset = (Math.floor(x / 110) % 2) * 55;
+        for (let y = GROUND; y < H; y += 18) {
+          ctx.beginPath(); 
+          ctx.moveTo(x + offset, y); 
+          ctx.lineTo(x + offset, y + 18); 
+          ctx.stroke();
+          
+          // Các đinh tán đồng cổ kính gia cố tấm ván gỗ boong tàu
+          ctx.fillStyle = "#2c1505";
+          ctx.beginPath();
+          ctx.arc(x + offset - 4, y + 9, 1.5, 0, Math.PI*2);
+          ctx.arc(x + offset + 4, y + 9, 1.5, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
+      
+      // Bóng đổ của boong tàu phía giáp biển
+      ctx.fillStyle = "rgba(0,0,0,.32)";
+      ctx.fillRect(0, GROUND, W, 7);
 
       this.animT = (this.animT||0) + 0.6;
     },
