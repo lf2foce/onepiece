@@ -620,6 +620,15 @@
         }
         
         // Vẽ Giày / Dép rơm
+        if (cfg.isLuffy) {
+          // Dép rơm có quai đan chéo chữ X chi tiết trên mu bàn chân
+          ctx.strokeStyle = "#402d1a"; ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.moveTo(footX - 5, -9); ctx.lineTo(footX + 9, -11);
+          ctx.moveTo(footX - 5, -11); ctx.lineTo(footX + 9, -9);
+          ctx.stroke();
+        }
+
         ctx.fillStyle = back ? cfg.shoeSh : cfg.shoe;
         roundRect(footX - 7, -11, 22, 9, 4); ctx.fill();
         ctx.fillStyle = cfg.sole;
@@ -663,6 +672,25 @@
       ctx.save();
       ctx.translate(0, -bob);
       ctx.lineJoin = "round"; ctx.lineCap = "round";
+
+      // ---- HIỆU ỨNG GEAR 2 (Hơi nước bốc khói màu hồng nhạt bồng bềnh bốc thẳng từ chân lên đầu) ----
+      if (this.meter >= 100 || this.hp < 50) {
+        ctx.save();
+        ctx.globalCompositeOperation = "screen";
+        const anim = this.animTime * 8;
+        for (let i = 0; i < 4; i++) {
+          const steamY = (anim + i * 18) % 110;
+          const steamX = Math.sin(anim * 0.15 + i * 1.8) * 16;
+          const r = 4.5 + Math.sin(anim * 0.1 + i) * 1.8;
+          ctx.fillStyle = i % 2 ? "rgba(255, 200, 215, 0.35)" : "rgba(255, 255, 255, 0.28)";
+          ctx.beginPath();
+          ctx.arc(steamX, -steamY, r, 0, Math.PI * 2);
+          ctx.arc(steamX - r*0.5, -steamY + r*0.2, r*0.7, 0, Math.PI*2);
+          ctx.arc(steamX + r*0.5, -steamY - r*0.2, r*0.6, 0, Math.PI*2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
 
       this.drawBackArm(skin, skinSh);
       this.drawLegs({ pants: blue, pantsSh: blueSh, shoe: "#efe2c8", shoeSh: "#cdbf9f", sole: "#a98d5f", isLuffy: true, skin: skin, skinSh: skinSh }, legs);
@@ -760,24 +788,59 @@
       ctx.ellipse(-4, -102, 2.2, 1.3, -Math.PI * 0.1, 0, Math.PI * 2);
       ctx.fill();
 
-      // mắt to tròn
-      ctx.fillStyle = "#fff";
-      ctx.beginPath(); ctx.ellipse(6, -107, 3.6, 4.4, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#15151c";
-      ctx.beginPath(); ctx.arc(7, -106, 2.1, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = "#181820"; ctx.lineWidth = 1.8;
-      ctx.beginPath(); ctx.moveTo(2.5, -113); ctx.lineTo(10.5, -112); ctx.stroke();
-      // sẹo dưới mắt
+      // ---- BIỂU CẢM GƯƠNG MẶT DYNAMIC CHO LUFFY ----
+      if (this.state === "hurt") {
+        // 1. Dính đòn (Hurt face)
+        // Mắt nhắm nghiền nhăn nhó dạng dấu sắc chéo góc
+        ctx.strokeStyle = "#181820"; ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        // Mắt trái nhắm nghiền nhăn nhó
+        ctx.moveTo(3, -110); ctx.lineTo(11, -106);
+        ctx.moveTo(3, -106); ctx.lineTo(11, -110);
+        ctx.stroke();
+        
+        // Miệng nghiến răng đau nhức méo xệch
+        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = "#181820"; ctx.lineWidth = 1.8;
+        roundRect(-2, -100, 10, 6, 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(-2, -97); ctx.lineTo(8, -97); ctx.stroke(); // đường kẻ răng
+      } else if (this.state === "ko") {
+        // 2. Bị hạ gục (KO face)
+        // Mắt xoáy xệ đờ đẫn hoặc nhắm tịt dạng nẹp xéo ngủ lịm
+        ctx.strokeStyle = "#181820"; ctx.lineWidth = 2;
+        // Vẽ dấu X chéo đờ đẫn ở hai mắt
+        ctx.beginPath();
+        ctx.moveTo(4, -109); ctx.lineTo(10, -103);
+        ctx.moveTo(10, -109); ctx.lineTo(4, -103);
+        ctx.stroke();
+
+        // Miệng mở ngáp ngáp méo xệch hình oval dẹt thở dài
+        ctx.fillStyle = "#4a1515";
+        ctx.beginPath(); ctx.ellipse(5, -97, 4, 3, 0, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "#181820"; ctx.lineWidth = 1.5; ctx.stroke();
+      } else {
+        // 3. Bình thường / Tấn công (Happy/Normal face)
+        // mắt to tròn rực rỡ đặc trưng của Luffy
+        ctx.fillStyle = "#fff";
+        ctx.beginPath(); ctx.ellipse(6, -107, 3.6, 4.4, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#15151c";
+        ctx.beginPath(); ctx.arc(7, -106, 2.1, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "#181820"; ctx.lineWidth = 1.8;
+        ctx.beginPath(); ctx.moveTo(2.5, -113); ctx.lineTo(10.5, -112); ctx.stroke();
+
+        // nụ cười toe toét ngoác rộng khoe răng trắng xóa
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.moveTo(-1, -99); ctx.quadraticCurveTo(6, -90, 13, -99);
+        ctx.quadraticCurveTo(6, -96, -1, -99); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = "#7a2a2a"; ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.moveTo(-1, -99); ctx.quadraticCurveTo(6, -90, 13, -99);
+        ctx.stroke();
+      }
+
+      // sẹo dưới mắt (vẫn luôn hiện hữu)
       ctx.strokeStyle = "#c05a49"; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(3, -100); ctx.lineTo(9, -100); ctx.stroke();
-      // nụ cười toe toét
-      ctx.fillStyle = "#fff";
-      ctx.beginPath();
-      ctx.moveTo(-1, -99); ctx.quadraticCurveTo(6, -90, 13, -99);
-      ctx.quadraticCurveTo(6, -96, -1, -99); ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = "#7a2a2a"; ctx.lineWidth = 1.6;
-      ctx.beginPath(); ctx.moveTo(-1, -99); ctx.quadraticCurveTo(6, -90, 13, -99);
-      ctx.stroke();
 
       // ---- mũ rơm ----
       const brimY = -117;
@@ -848,8 +911,8 @@
       const green   = flash ? "#59d488" : "#2ea15a";
       const greenSh = flash ? "#3aa564" : "#1c6e3c";
 
-      // Trạng thái quấn khăn nghiêm túc: khi đầy nộ (>50%) hoặc đang ra chiêu
-      const isSerious = (this.meter >= 50 || this.state === "attack");
+      // Trạng thái quấn khăn nghiêm túc: Chỉ khi máu dưới 50 (hp < 50) thì mới quấn khăn bandana đen lên đầu
+      const isSerious = (this.hp < 50);
 
       ctx.save();
       ctx.translate(0, -bob);
@@ -923,6 +986,17 @@
         ctx.translate(bx, top);
         ctx.rotate(angle);
         
+        // Kiếm khí Haki xanh Enma tỏa bao quanh vỏ kiếm khi nộ đầy 100% cực kỳ đẹp mắt
+        if (this.meter >= 100) {
+          ctx.save();
+          ctx.globalCompositeOperation = "screen";
+          ctx.fillStyle = "rgba(100, 255, 180, 0.16)";
+          ctx.beginPath();
+          ctx.ellipse(-5, 17, 10, 24, -0.3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
         // Vỏ kiếm
         ctx.strokeStyle = s.sheath;
         ctx.lineWidth = 5.2; ctx.lineCap = "round";
@@ -953,10 +1027,15 @@
       fg.addColorStop(0, skin); fg.addColorStop(1, skinSh);
       ctx.fillStyle = fg;
       ctx.beginPath(); ctx.arc(0, -107, 15, 0, Math.PI * 2); ctx.fill();
-      // tai + 3 khuyên vàng bên tai trái
+      // tai + 3 khuyên vàng bên tai trái khẽ đung đưa nhẹ theo nhịp thở/di chuyển
       ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(-13, -105, 3, 0, Math.PI * 2); ctx.fill();
+      const sway = Math.sin(this.animTime * 4.5) * 1.0;
       ctx.fillStyle = "#f5c518";
-      for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(-14, -100 + i * 4, 1.6, 0, Math.PI * 2); ctx.fill(); }
+      for (let i = 0; i < 3; i++) {
+        const ex = -14 + i * 0.5 + sway * 0.45;
+        const ey = -100 + i * 4;
+        ctx.beginPath(); ctx.arc(ex, ey, 1.6, 0, Math.PI * 2); ctx.fill();
+      }
 
       if (isSerious) {
         // --- BANDANA ĐEN (Trạng thái chiến đấu quấn khăn bandana huyền thoại) ---
@@ -1001,19 +1080,71 @@
       ctx.strokeStyle = skinSh; ctx.lineWidth = 1.8;
       ctx.beginPath(); ctx.moveTo(1, -103); ctx.lineTo(3, -102); ctx.stroke();
 
-      // mắt nghiêm nghị sát khí
-      ctx.fillStyle = "#fff";
-      ctx.beginPath(); ctx.ellipse(6, -106, 3, 3.4, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#15151c";
-      ctx.beginPath(); ctx.arc(6.6, -106, 1.7, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = "#20242b"; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(2.5, -112); ctx.lineTo(10.5, -111); ctx.stroke();
-      // sẹo dọc qua mắt trái
+      // ---- BIỂU CẢM GƯƠNG MẶT DYNAMIC CHO ZORO ----
+      if (this.state === "hurt") {
+        // 1. Dính đòn (Hurt face)
+        // Mắt nhắm chặt nghiến răng nhăn nhó
+        ctx.strokeStyle = "#15151c"; ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.moveTo(3.5, -108); ctx.lineTo(9.5, -104);
+        ctx.stroke();
+        
+        // Miệng mở nghiến răng đau đớn
+        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = "#15151c"; ctx.lineWidth = 1.6;
+        roundRect(2, -100, 9, 5, 1.5); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(2, -97.5); ctx.lineTo(11, -97.5); ctx.stroke();
+      } else if (this.state === "ko") {
+        // 2. Bị hạ gục (KO face)
+        // Mắt nhắm lịm
+        ctx.strokeStyle = "#15151c"; ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.moveTo(3.5, -106); ctx.lineTo(9.5, -106);
+        ctx.stroke();
+        
+        // Miệng há oval nhỏ kiệt sức
+        ctx.fillStyle = "#330a0a";
+        ctx.beginPath(); ctx.ellipse(6, -98, 3, 2, 0, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "#15151c"; ctx.lineWidth = 1.2; ctx.stroke();
+
+        // Vệt máu rỉ đỏ chảy dài từ khóe miệng xuống cằm cổ cực kỳ chân thực anh dũng
+        ctx.fillStyle = "#a30e0e";
+        ctx.beginPath();
+        ctx.moveTo(6, -97);
+        ctx.lineTo(8, -91);
+        ctx.lineTo(9.5, -91);
+        ctx.lineTo(7, -97);
+        ctx.closePath(); ctx.fill();
+      } else {
+        // 3. Bình thường / Tấn công (Normal face)
+        ctx.fillStyle = "#fff";
+        ctx.beginPath(); ctx.ellipse(6, -106, 3, 3.4, 0, 0, Math.PI * 2); ctx.fill();
+        
+        if (isSerious) {
+          // Trạng thái nghiêm túc (<50 hp): Mắt lóe đỏ sát khí quỷ dị (Asura eyes) cực kỳ đáng sợ
+          ctx.fillStyle = "#ff2a2a";
+          ctx.beginPath(); ctx.arc(6.6, -106, 1.8, 0, Math.PI * 2); ctx.fill();
+          
+          // Thêm vệt sáng đỏ lóe ngang qua mắt
+          ctx.strokeStyle = "rgba(255, 42, 42, 0.4)"; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(0, -106); ctx.lineTo(13, -106); ctx.stroke();
+        } else {
+          // Trạng thái thường: Mống mắt đen nghiêm túc
+          ctx.fillStyle = "#15151c";
+          ctx.beginPath(); ctx.arc(6.6, -106, 1.7, 0, Math.PI * 2); ctx.fill();
+        }
+
+        ctx.strokeStyle = "#20242b"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(2.5, -112); ctx.lineTo(10.5, -111); ctx.stroke();
+        
+        // miệng ngậm chặt nghiêm túc
+        ctx.strokeStyle = "#6a2626"; ctx.lineWidth = 1.8;
+        ctx.beginPath(); ctx.moveTo(2, -99); ctx.lineTo(10, -99); ctx.stroke();
+      }
+
+      // sẹo dọc qua mắt trái (vẫn luôn hiện hữu)
       ctx.strokeStyle = "#b5493a"; ctx.lineWidth = 1.8;
       ctx.beginPath(); ctx.moveTo(6, -114); ctx.lineTo(6, -101); ctx.stroke();
-      // miệng ngậm chặt nghiêm túc
-      ctx.strokeStyle = "#6a2626"; ctx.lineWidth = 1.8;
-      ctx.beginPath(); ctx.moveTo(2, -99); ctx.lineTo(10, -99); ctx.stroke();
 
       ctx.restore();
     }
@@ -1048,6 +1179,23 @@
       ctx.strokeStyle = bg; ctx.lineWidth = 5.5; ctx.lineCap = "round";
       ctx.beginPath(); ctx.moveTo(9, -1); ctx.lineTo(66, -4); ctx.stroke();
       ctx.shadowBlur = 0; // Tắt phát sáng đổ bóng để không ảnh hưởng chi tiết khác
+
+      // Kiếm Enma bùng cháy ngọn lửa quỷ màu xanh lá rực rỡ tỏa khí phách khi nộ đầy 100%
+      if (this.meter >= 100) {
+        ctx.save();
+        ctx.globalCompositeOperation = "screen";
+        const fAnim = this.animTime * 15;
+        for (let i = 0; i < 5; i++) {
+          const fx = 14 + i * 11;
+          const fy = -2.5 + Math.sin(fAnim * 0.4 + i) * 3;
+          const fr = 4.5 + Math.sin(fAnim * 0.2 + i * 1.5) * 1.8;
+          ctx.fillStyle = i % 2 ? "rgba(100, 255, 180, 0.45)" : "rgba(30, 220, 100, 0.28)";
+          ctx.beginPath();
+          ctx.arc(fx, fy, fr, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
       
       ctx.strokeStyle = "rgba(120,140,160,.6)"; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(9, -3); ctx.lineTo(64, -6); ctx.stroke();
