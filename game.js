@@ -289,7 +289,6 @@
       this.flash = 140;
       Sound.hit();
       Game.addHitSpark(this.x, this.y - 70, blocked, isSpecial);
-      Game.shake(isSpecial ? 13 : 6);
       // HITSTOP — đóng băng vài chục ms để cú đánh "nặng tay"
       Game.hitstop = Math.max(Game.hitstop, blocked ? 45 : (isSpecial ? 130 : 85));
       if (isSpecial && !blocked) Game.flashScreen = 1;
@@ -298,7 +297,6 @@
         this.attack = null;
         if (attacker) attacker.comboTimer = 1600;  // giữ combo hiện lúc KO
         Sound.ko();
-        Game.shake(16);
       }
     }
 
@@ -883,7 +881,6 @@
     round: 1,
     roundTime: 60,
     timeLeft: 60,
-    shakeAmt: 0,
     hitstop: 0,          // ms đóng băng khi trúng đòn
     flashScreen: 0,      // 0..1 chớp trắng cho tuyệt chiêu
     announce: null,      // {text, t}
@@ -944,8 +941,6 @@
       if (this.state === "playing") { this.state = "paused"; this.announce = { text:"TẠM DỪNG", sub:"Nhấn P để tiếp tục", t: 999999 }; }
       else if (this.state === "paused") { this.state = "playing"; this.announce = null; }
     },
-
-    shake(a) { this.shakeAmt = Math.max(this.shakeAmt, a); },
 
     addHitSpark(x, y, blocked, isSpecial) {
       const n = blocked ? 7 : (isSpecial ? 22 : 13);
@@ -1021,8 +1016,6 @@
         this.announce.t -= dt * 1000;
         if (this.announce.t <= 0) this.announce = null;
       }
-      if (this.shakeAmt > 0) this.shakeAmt = Math.max(0, this.shakeAmt - dt*40);
-
       // đếm giờ combo cho cả hai
       for (const f of this.players) {
         if (f.comboTimer > 0) { f.comboTimer -= dt * 1000; if (f.comboTimer <= 0) f.combo = 0; }
@@ -1153,12 +1146,6 @@
     // ---------------------------------------------------------- RENDER
     render() {
       ctx.save();
-      // rung màn hình
-      if (this.shakeAmt > 0) {
-        const dx = (Math.random()*2-1) * this.shakeAmt;
-        const dy = (Math.random()*2-1) * this.shakeAmt;
-        ctx.translate(dx, dy);
-      }
       this.drawBackground();
 
       // sắp xếp vẽ theo hp? vẽ cả hai
