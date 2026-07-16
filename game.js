@@ -141,9 +141,23 @@
 
   // Chiêu ↓+skill theo nhân vật: chưa đầy Haki -> "special"; đầy 100% -> "ult" (siêu chiêu 2)
   const DOWN_MOVES = {
-    luffy: { special: "axe",   ult: "king" },
-    zoro:  { special: "asura", ult: "sanzen" },
+    luffy:  { special: "axe",      ult: "king" },
+    zoro:   { special: "asura",    ult: "sanzen" },
+    sanji:  { special: "concasse", ult: "ifrit" },
+    shanks: { special: "haoshoku", ult: "storm" },
+    ace:    { special: "kagerou",  ult: "entei" },
   };
+
+  // Tên hiển thị + biểu tượng + màu Haki riêng của từng đấu sĩ (dùng cho HUD và aura)
+  const CHAR_INFO = {
+    // warm: tông màn khựng siêu chiêu (nóng = vàng/cam, nguội = xanh lá)
+    luffy:  { name: "LUFFY",  emoji: "👒", aura: "#ffd23f", warm: true },
+    zoro:   { name: "ZORO",   emoji: "⚔️", aura: "#bfffdb", warm: false },
+    sanji:  { name: "SANJI",  emoji: "🚬", aura: "#ff7f00", warm: true },
+    shanks: { name: "SHANKS", emoji: "👑", aura: "#ff5a5a", warm: true },
+    ace:    { name: "ACE",    emoji: "🔥", aura: "#ff8c00", warm: true },
+  };
+  const infoOf = id => CHAR_INFO[id] || CHAR_INFO.zoro;
 
   // ================================================================ PROJECTILE
   class Projectile {
@@ -452,8 +466,9 @@
       if (!this.canAct()) return;
       const def = this.moves[kind];
       if (!def) return;
-      // SUPER: đầy Haki 100% -> siêu chiêu (khựng + mạnh). king/sanzen là chiêu riêng chỉ có ở super
-      const canSuper = (kind === "special" || kind === "king" || kind === "sanzen");
+      // SUPER: đầy Haki 100% -> siêu chiêu (khựng + mạnh). Các key ult2 chỉ tồn tại ở super
+      const ULT2_KEYS = ["king", "sanzen", "ifrit", "storm", "entei"];
+      const canSuper = (kind === "special" || ULT2_KEYS.includes(kind));
       const isSuper = canSuper && this.meter >= 100;
       if (!isSuper && def.meterCost && this.meter < def.meterCost) return; // chưa đủ Haki
       if (isSuper) this.meter -= 100;
@@ -553,8 +568,8 @@
       // giảm bộ đếm
       if (this.flash > 0) this.flash -= dt * 1000;
 
-      // hướng nhìn tự động về phía đối thủ khi rảnh
-      if (this.canAct()) {
+      // hướng nhìn tự động về phía đối thủ khi rảnh (KHÔNG áp dụng ở chế độ đi bài co-op)
+      if (this.canAct() && Game.mode !== "adventure") {
         this.facing = opp.x >= this.x ? 1 : -1;
       }
 
@@ -621,6 +636,15 @@
         else if (a.elapsed < aEnd || d.type==="projectile") a.phase = "active";
         else a.phase = "recovery";
 
+        // DASH: chiêu có def.dash -> tự lao thẳng tới trước trong pha ra đòn (vd Diable Jambe)
+        if (d.dash && a.phase === "active") this.vx = this.facing * d.dash;
+
+        // MULTI-HIT: chiêu có def.multiHit (ms) -> reset danh sách đã trúng để giã liên tục (vd Bão Haki)
+        if (d.multiHit && a.phase === "active") {
+          if (a.nextHit === undefined) a.nextHit = 0;
+          if (a.elapsed >= sEnd + a.nextHit) { a.hit.clear(); a.nextHit += d.multiHit; }
+        }
+
         // Sinh hiệu ứng giậm đất khổng lồ dẹt khi Luffy nện rìu xuống mặt đất
         if (this.id === "luffy" && d.key === "axe" && a.elapsed >= sEnd && !a.shaked) {
           a.shaked = true;
@@ -635,7 +659,7 @@
             if (a.elapsed >= nextSpawnTime && a.spawnedCount < d.multiProj.count) {
               const isLast = a.spawnedCount === d.multiProj.count - 1;
               const pDef = {
-                kind: "gatling",
+                kind: d.proj.kind || "gatling",   // mỗi nhân vật có kiểu đạn loạt riêng
                 speed: d.multiProj.speed,
                 w: d.proj.w,
                 h: d.proj.h,
@@ -792,7 +816,7 @@
         const px = Math.sin(i * 6.5 + anim * 0.07) * 20;
         const py = -seedY - 10;
         const size = 1.8 + Math.abs(seed) * 2.5;
-        ctx.fillStyle = f.id === "luffy" ? "#ffd23f" : "#bfffdb";
+        ctx.fillStyle = infoOf(f.id).aura;
         ctx.beginPath();
         ctx.arc(px, py, size, 0, Math.PI * 2);
         ctx.fill();
@@ -807,11 +831,11 @@
       s.drawAura();
 
       ctx.save();
-      // bóng đổ
+      // bóng đổ (theo làn sâu Z ở chế độ đi bài; 1v1 thì z=0)
       ctx.fillStyle = "rgba(0,0,0,.28)";
       ctx.beginPath();
       const shW = s.onGround ? 40 : 26;
-      ctx.ellipse(s.x, GROUND + 6, shW, 10, 0, 0, Math.PI*2);
+      ctx.ellipse(s.x, GROUND + (s.z || 0) + 6, shW, 10, 0, 0, Math.PI*2);
       ctx.fill();
 
       ctx.translate(s.x, s.y);
@@ -827,7 +851,10 @@
       const flashing = s.flash > 0 && Math.floor(s.flash/40) % 2 === 0;
 
       if (s.id === "luffy") this.drawLuffy(flashing);
-      else this.drawZoro(flashing);
+      else if (s.id === "zoro") this.drawZoro(flashing);
+      else if (s.id === "sanji" && this.drawSanji) this.drawSanji(flashing);
+      else if (s.id === "shanks" && this.drawShanks) this.drawShanks(flashing);
+      else if (s.id === "ace" && this.drawAce) this.drawAce(flashing);
 
       ctx.restore();
     }
@@ -945,6 +972,9 @@
   if (typeof window !== "undefined") {
     if (window.LuffyInit) window.LuffyInit(Fighter, MOVES);
     if (window.ZoroInit) window.ZoroInit(Fighter, MOVES);
+    if (window.SanjiInit) window.SanjiInit(Fighter, MOVES);
+    if (window.ShanksInit) window.ShanksInit(Fighter, MOVES);
+    if (window.AceInit) window.AceInit(Fighter, MOVES);
   }
 
   // helper vẽ chữ nhật bo góc
@@ -1064,6 +1094,51 @@
       });
       document.getElementById("resultBtn").addEventListener("click", () => this.onResultContinue());
       document.getElementById("menuBtn").addEventListener("click", () => this.toMenu());
+
+      // Lập trình chọn nhân vật trực quan trên sảnh chờ (Luffy / Zoro / Sanji / Shanks)
+      const CHARS_P1 = [
+        { id: "luffy", name: "LUFFY", emoji: "👒", title: "P1: Mũ Rơm" },
+        { id: "sanji", name: "SANJI", emoji: "🚬", title: "P1: Hắc Cước" },
+        { id: "shanks", name: "SHANKS", emoji: "👑", title: "P1: Tóc Đỏ" },
+        { id: "ace", name: "ACE", emoji: "🔥", title: "P1: Hỏa Quyền" }
+      ];
+      const CHARS_P2 = [
+        { id: "zoro", name: "ZORO", emoji: "⚔️", title: "P2: Tam Đao" },
+        { id: "sanji", name: "SANJI", emoji: "🚬", title: "P2: Hắc Cước" },
+        { id: "shanks", name: "SHANKS", emoji: "👑", title: "P2: Tóc Đỏ" },
+        { id: "ace", name: "ACE", emoji: "🔥", title: "P2: Hỏa Quyền" }
+      ];
+      this.p1CharId = "luffy";
+      this.p2CharId = "zoro";
+      let p1Idx = 0;
+      let p2Idx = 0;
+
+      const p1Btn = document.getElementById("p1Select");
+      const p2Btn = document.getElementById("p2Select");
+
+      if (p1Btn) {
+        p1Btn.addEventListener("click", () => {
+          p1Idx = (p1Idx + 1) % CHARS_P1.length;
+          const char = CHARS_P1[p1Idx];
+          this.p1CharId = char.id;
+          p1Btn.querySelector(".fp-emoji").textContent = char.emoji;
+          p1Btn.querySelector("b").textContent = char.name;
+          p1Btn.querySelector("small").textContent = char.title + " ▾";
+          Sound.punch();
+        });
+      }
+
+      if (p2Btn) {
+        p2Btn.addEventListener("click", () => {
+          p2Idx = (p2Idx + 1) % CHARS_P2.length;
+          const char = CHARS_P2[p2Idx];
+          this.p2CharId = char.id;
+          p2Btn.querySelector(".fp-emoji").textContent = char.emoji;
+          p2Btn.querySelector("b").textContent = char.name;
+          p2Btn.querySelector("small").textContent = char.title + " ▾";
+          Sound.punch();
+        });
+      }
     },
 
     show(id) { document.getElementById(id).classList.remove("hidden"); },
@@ -1084,6 +1159,12 @@
     },
 
     startRound() {
+      // Gán nhân vật đã chọn từ sảnh chờ
+      this.luffy.id = this.p1CharId || "luffy";
+      this.luffy.moves = MOVES[this.luffy.id];
+      this.zoro.id = this.p2CharId || "zoro";
+      this.zoro.moves = MOVES[this.zoro.id];
+
       this.luffy.reset(W*0.30, 1);
       this.zoro.reset(W*0.70, -1);
       this.luffy.meter = 0; this.zoro.meter = 0;
@@ -1318,6 +1399,7 @@
           const dir = Math.sign(p.vx) || target.facing*-1;
           target.takeHit(p.d.dmg, p.d.knockback, p.d.launch, dir, p.d.kind==="redhawk"||p.d.kind==="tatsumaki"||p.d.super, p.owner);
           p.owner.gainMeter(6);
+          if (this.addAceInferno && p.d.kind === "hiken") this.addAceInferno(p.x, p.y);
           if (p.d.super) { this.flashScreen = 1.3; this.hitstop = Math.max(this.hitstop, 150); this.addHitSpark(p.x, p.y, false, true); }
           p.dead = true;
         }
@@ -1355,6 +1437,18 @@
       if (rectsOverlap(hb, defender.body)) {
         attacker.attack.hit.add(defender);
         const d = attacker.attack.def;
+
+        // Gọi hiệu ứng nổ đặc trưng của các đấu sĩ nếu có định nghĩa
+        if (this.addFireExplosion && attacker.id === "sanji" && d.key === "special") {
+          this.addFireExplosion(defender.x, defender.y - 70);
+        }
+        if (this.addHakiStorm && attacker.id === "shanks" && d.key === "special") {
+          this.addHakiStorm(defender.x, defender.y - 70);
+        }
+        if (this.addAceInferno && attacker.id === "ace" && (d.key === "kagerou" || d.key === "entei")) {
+          this.addAceInferno(defender.x, defender.y - 70);
+        }
+
         const dir = attacker.facing;
         const sup = attacker.attack.isSuper;
         const dmg    = sup ? Math.round(d.dmg * 2.1) : d.dmg;
@@ -1380,7 +1474,7 @@
       const target = 2; // thắng 2 hiệp
       const matchOver = this.luffy.wins >= target || this.zoro.wins >= target;
 
-      const nameOf = f => f.id === "luffy" ? "LUFFY 👒" : "ZORO ⚔️";
+      const nameOf = f => `${infoOf(f.id).name} ${infoOf(f.id).emoji}`;
       const rt = document.getElementById("resultTitle");
       const tx = document.getElementById("resultText");
       const btn = document.getElementById("resultBtn");
@@ -1602,7 +1696,7 @@
       const f = this.superFocus;
       const p = clamp(this.superFreeze / this.superDur, 0, 1);   // 1 -> 0
       const vig = clamp(Math.sin((1 - p) * Math.PI), 0, 1);       // vào & ra mượt
-      const warm = f.id === "luffy";
+      const warm = infoOf(f.id).warm;
       const c1 = warm ? "255,222,150" : "180,255,210";
       const c2 = warm ? "255,90,40"  : "40,220,120";
       const cx = f.x, cy = f.y - 62;
@@ -1733,7 +1827,7 @@
       ctx.fillStyle = "#fff";
       ctx.font = "bold 28px Trebuchet MS, sans-serif";
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText(f.id === "luffy" ? "👒" : "⚔️", cx, cy);
+      ctx.fillText(infoOf(f.id).emoji, cx, cy);
 
       // Nhãn cấp độ (Lv. 100) kiểu Fighting Path RPG
       const lvX = right ? cx - 22 : cx + 22;
@@ -1757,7 +1851,7 @@
       ctx.textAlign = right ? "right" : "left";
       const nameX = right ? W - 105 : 105;
       ctx.strokeStyle = "rgba(0,0,0,0.5)"; ctx.lineWidth = 4;
-      const nameStr = f.id === "luffy" ? "LUFFY" : "ZORO";
+      const nameStr = infoOf(f.id).name;
       ctx.strokeText(nameStr, nameX, y - 4);
       ctx.fillText(nameStr, nameX, y - 4);
 
@@ -1917,11 +2011,24 @@
 
   Game.init();
 
+  // Expose Game and Sound to global window space for modular extensions (like adventure.js)
+  if (typeof window !== "undefined") {
+    window.OP_GAME = Game;
+    window.OP_SOUNDS = Sound;
+    window.OP_MOVES = MOVES;   // để adventure.js tra bộ chiêu theo nhân vật đã chọn
+    Game.Projectile = Projectile;   // expose class đạn cho các file nhân vật hook vẽ
+
+    // Các file nhân vật nạp TRƯỚC game.js nên không thấy OP_GAME lúc load
+    // -> gọi hook của chúng ở đây (cài vẽ đạn riêng, hiệu ứng riêng)
+    if (window.SanjiHook) window.SanjiHook(Game);
+    if (window.ShanksHook) window.ShanksHook(Game);
+  }
+
   // ---- Hook debug/chụp ảnh (chỉ chạy trong trình duyệt, không ảnh hưởng lúc chơi thường) ----
   if (typeof location !== "undefined" && location.search) {
     const params = new URLSearchParams(location.search);
     if (params.get("auto")) {
-      Game.startMatch(params.get("mode") || "2p");
+      // Hoãn startMatch để adventure.js (nạp sau game.js) kịp override startMatch
       const poseFrac = params.get("pe") ? +params.get("pe") : 0.42;
       const poseFighter = (f, moveKey) => {
         if (moveKey === "none") return;
@@ -1935,6 +2042,9 @@
         }
       };
       setTimeout(() => {
+        if (params.get("c1")) Game.p1CharId = params.get("c1");   // chọn nhân vật để test
+        if (params.get("c2")) Game.p2CharId = params.get("c2");
+        Game.startMatch(params.get("mode") || "2p");   // gọi sau khi mọi script đã nạp
         if (params.get("pose")) {
           poseFighter(Game.luffy, params.get("l") || "close");
           poseFighter(Game.zoro, params.get("z") || "close");
@@ -1943,8 +2053,11 @@
         // spawn 1 projectile bất kỳ để chụp (sproj=sanzen / redhawk / ...)
         const sproj = params.get("sproj");
         if (sproj) {
+          // sc=<charId> để lấy chiêu của nhân vật bất kỳ (sanji/shanks/...)
+          const sc = params.get("sc");
           const owner = sproj === "sanzen" ? Game.zoro : Game.luffy;
-          const mv = (MOVES.zoro[sproj] && MOVES.zoro[sproj].proj) ? MOVES.zoro[sproj] : MOVES.luffy[sproj];
+          let mv = sc && MOVES[sc] ? MOVES[sc][sproj] : null;
+          if (!mv) mv = (MOVES.zoro[sproj] && MOVES.zoro[sproj].proj) ? MOVES.zoro[sproj] : MOVES.luffy[sproj];
           if (mv && mv.proj) {
             let pd = Object.assign({}, mv.proj);
             if (params.get("psuper")) pd = Object.assign(pd, { w: pd.w * 1.6, h: pd.h * 1.6, super: true });
