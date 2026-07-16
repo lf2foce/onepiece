@@ -1093,6 +1093,28 @@
       });
     },
 
+    // Hiệu ứng 2 chưởng va nhau (strong=true khi triệt tiêu cả hai)
+    addClash(x, y, a, b, strong) {
+      const cA = a.d.color || "#ffd23f", cB = b.d.color || "#8fffbf";
+      const n = strong ? 22 : 12;
+      const spd = strong ? 280 : 180;
+      for (let i = 0; i < n; i++) {
+        const ang = (i / n) * Math.PI * 2;
+        this.sparks.push({
+          kind: "dot", x, y,
+          vx: Math.cos(ang) * (spd * (0.5 + Math.random())),
+          vy: Math.sin(ang) * (spd * (0.5 + Math.random())) - 40,
+          life: 320 + Math.random() * 240,
+          color: i % 2 ? cA : cB,
+          r: 2 + Math.random() * (strong ? 3.5 : 2.5),
+        });
+      }
+      this.sparks.push({ kind: "ring", x, y, life: strong ? 280 : 190, life0: strong ? 280 : 190,
+        r: 8, rMax: strong ? 56 : 34, color: "#ffffff" });
+      if (strong) { this.flashScreen = Math.max(this.flashScreen, 0.35); this.hitstop = Math.max(this.hitstop, 70); }
+      Sound.hit();
+    },
+
     // ---------- vòng lặp chính ----------
     loop(now) {
       if (!this._last) this._last = now;
@@ -1173,8 +1195,28 @@
       this.resolveMelee(this.zoro, this.luffy);
 
       // projectiles
+      for (const p of this.projectiles) p.update(dt);
+
+      // ---- ĐẤU CHƯỞNG: 2 projectile đối phương chạm nhau ----
+      const projs = this.projectiles;
+      for (let i = 0; i < projs.length; i++) {
+        const a = projs[i];
+        if (a.dead) continue;
+        for (let j = i + 1; j < projs.length; j++) {
+          const b = projs[j];
+          if (b.dead || a.owner === b.owner) continue;      // chỉ đấu với chưởng đối phương
+          if (!rectsOverlap(a.rect, b.rect)) continue;
+          const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+          const pa = a.d.dmg * (a.d.super ? 2.2 : 1);
+          const pb = b.d.dmg * (b.d.super ? 2.2 : 1);
+          if (pa > pb * 1.35) { b.dead = true; this.addClash(cx, cy, a, b, false); }        // a mạnh -> xuyên qua
+          else if (pb > pa * 1.35) { a.dead = true; this.addClash(cx, cy, a, b, false); }   // b mạnh -> xuyên qua
+          else { a.dead = true; b.dead = true; this.addClash(cx, cy, a, b, true); }         // ngang tài -> triệt tiêu
+          if (a.dead) break;
+        }
+      }
+
       for (const p of this.projectiles) {
-        p.update(dt);
         const target = p.owner === this.luffy ? this.zoro : this.luffy;
         if (!p.dead && target.state !== "ko" && rectsOverlap(p.rect, target.body)) {
           const dir = Math.sign(p.vx) || target.facing*-1;
@@ -1791,6 +1833,28 @@
             Game.demoFreeze = true;
           }
         }
+        // TEST trực tiếp: 2 chưởng chồng nhau -> 1 tick -> kiểm tra triệt tiêu + hiệu ứng
+        if (params.get("clashtest")) {
+          Game.luffy.x = 410; Game.luffy.facing = 1;
+          Game.zoro.x = 470; Game.zoro.facing = -1;
+          const p1 = new Projectile(Game.luffy, MOVES.luffy.special.proj);
+          const p2 = new Projectile(Game.zoro, MOVES.zoro.special.proj);
+          p1.x = 430; p2.x = 450;                       // chồng nhau
+          Game.projectiles.push(p1, p2);
+          const before = Game.projectiles.length;
+          Game.update(0.016);                           // 1 tick -> chạy đấu chưởng
+          const after = Game.projectiles.length;
+          Game.announce = { text: `chưởng ${before} -> ${after}  ·  sparks ${Game.sparks.length}`, sub: "CLASH TEST", t: 999999 };
+          Game.demoFreeze = true;
+        }
+        // TEST đấu chưởng: 2 projectile lao vào nhau
+        if (params.get("clash")) {
+          Game.luffy.x = 250; Game.luffy.facing = 1;
+          Game.zoro.x = 710; Game.zoro.facing = -1;
+          const lp = params.get("lp") || "special", zp = params.get("zp") || "special";
+          Game.projectiles.push(new Projectile(Game.luffy, MOVES.luffy[lp].proj));
+          Game.projectiles.push(new Projectile(Game.zoro, MOVES.zoro[zp].proj));
+        }
         if (params.get("lx")) Game.luffy.x = +params.get("lx");
         if (params.get("zx")) Game.zoro.x = +params.get("zx");
         // TEST: chạy 1 tick với intent block+special để kiểm tra siêu chiêu 2
@@ -1835,7 +1899,7 @@
           }
           Game.demoFreeze = true;
         }
-        if (!params.get("combotest")) Game.announce = null;
+        if (!params.get("combotest") && !params.get("clashtest")) Game.announce = null;
         if (!params.get("nopause")) Game.state = "paused";   // đóng băng để chụp
       }, 60);
     }
