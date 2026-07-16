@@ -105,6 +105,10 @@
         sfx:"punch",
         multiProj: { count: 6, interval: 60, dmg: 3, speed: 650 },
         proj:{ kind:"gatling", speed:650, w:44, h:26, dmg:3, knockback:110, launch:-22, life:1000, color:"#ffcf9e" } },
+      axe: { key:"axe", name:"Gomu Gomu no Ono", type:"melee",
+        dmg:16, startup:220, active:150, recovery:230,
+        reach:{dx:15,dy:-200,w:340,h:205}, knockback:350, launch:140, meterGain:14,
+        sfx:"punch", color:"#ff9a6b" },
       special: { key:"special", name:"Red Hawk", type:"projectile",
         dmg:22, startup:230, active:0, recovery:430, meterCost:50, meterGain:0,
         sfx:"special",
@@ -119,6 +123,10 @@
         dmg:10, startup:130, active:0, recovery:290, meterGain:11,
         sfx:"slash",
         proj:{ kind:"slash", speed:600, w:40, h:70, dmg:10, knockback:280, launch:-70, life:2000, color:"#9affc4" } },
+      asura: { key:"asura", name:"Kijin Ashura — Chém Xoay Nhảy", type:"melee",
+        dmg:16, startup:350, active:650, recovery:300,
+        reach:{dx:15,dy:-80,w:260,h:90}, knockback:260, launch:-50, meterGain:14,
+        sfx:"slash", color:"#df9cff" },
       special: { key:"special", name:"Long Quyển Phong (Tatsumaki)", type:"projectile",
         dmg:21, startup:210, active:0, recovery:440, meterCost:50, meterGain:0,
         sfx:"special",
@@ -405,8 +413,10 @@
       // ------ điều khiển khi có thể hành động ------
       this.blocking = false;
       if (this.canAct()) {
-        // block
-        if (intents.block && this.onGround) {
+        const hasAttackIntent = intents.close || intents.ranged || intents.special;
+
+        // block (chỉ đỡ đòn nếu không có ý định tấn công)
+        if (intents.block && this.onGround && !hasAttackIntent) {
           this.blocking = true;
           this.state = "block";
           this.vx *= 0.6;
@@ -428,7 +438,20 @@
 
           // tấn công (edge)
           if (intents.close)   { this.startAttack("close");   Sound[this.moves.close.sfx](); }
-          else if (intents.ranged) { this.startAttack("ranged"); if (this.state==="attack") Sound[this.moves.ranged.sfx](); }
+          else if (intents.ranged) {
+            if (intents.block) {
+              if (this.id === "luffy") {
+                this.startAttack("axe");
+                if (this.state === "attack") Sound.special();
+              } else if (this.id === "zoro") {
+                this.startAttack("asura");
+                if (this.state === "attack") Sound.special();
+              }
+            } else {
+              this.startAttack("ranged");
+              if (this.state === "attack") Sound[this.moves.ranged.sfx]();
+            }
+          }
           else if (intents.special){ this.startAttack("special");}
         }
       }
@@ -477,6 +500,17 @@
             Game.projectiles.push(new Projectile(this, d.proj));
             this.gainMeter(d.meterGain || 0);
             if (d.sfx === "special") Sound.special();
+          }
+        }
+
+        // Xử lý di chuyển lướt thong thả siêu xa đặc biệt cho Ashura của Zoro (ở dưới đất)
+        if (d.key === "asura") {
+          if (a.phase === "startup") {
+            this.vx = 450 * this.facing; // Thong thả lao lên chuẩn bị quét kiếm
+          } else if (a.phase === "active") {
+            this.vx = 360 * this.facing; // Lướt ngang đầm thong thả, xoay quét sạch đối thủ
+          } else {
+            this.vx *= 0.85; // Giảm tốc độ khi kết thúc đòn
           }
         }
 
@@ -642,6 +676,29 @@
       return { a:0.15, b:-0.15 };
     }
 
+    legAxeSwing() {
+      if (this.state === "attack" && this.attack && this.attack.def.key === "axe") {
+        const d = this.attack.def, a = this.attack, e = a.elapsed;
+        const sEnd = d.startup;
+        const aEnd = sEnd + d.active;
+        if (e < sEnd) {
+          // Lấy đà: chân nâng cực kỳ cao lên bầu trời và hơi co về sau
+          const t = e / sEnd;
+          return { h: -48 - t * 180, x: 10 - t * 35, state: "rising" };
+        } else if (e < aEnd) {
+          // Đập xuống: Chân giáng mạnh từ độ cao -228px xuống mặt đất cách xa 340px
+          const t = (e - sEnd) / d.active;
+          const h = -228 + t * 218; // từ -228 xuống -10
+          const x = -25 + t * 365;   // vươn cực xa ra 340px phía trước!
+          return { h, x, state: "slamming" };
+        }
+        // Thu chân về
+        const t = clamp((e - aEnd) / d.recovery, 0, 1);
+        return { h: -10 + t * (-38), x: 340 - t * 330, state: "recovery" };
+      }
+      return null;
+    }
+
     // ---- Helper dùng chung: hai chân + giày ----
     drawLegs(cfg, legs) {
       const one = (hipX, ang, back) => {
@@ -757,7 +814,77 @@
       }
 
       this.drawBackArm(skin, skinSh);
-      this.drawLegs({ pants: blue, pantsSh: blueSh, shoe: "#efe2c8", shoeSh: "#cdbf9f", sole: "#a98d5f", isLuffy: true, skin: skin, skinSh: skinSh }, legs);
+      
+      const isAxe = this.state === "attack" && this.attack && this.attack.def.key === "axe";
+      if (isAxe) {
+        const axe = this.legAxeSwing();
+        if (axe) {
+          // Chân sau đứng tấn chịu lực vững chắc
+          const backAng = 0.35;
+          const kneeX = -5 + Math.sin(backAng) * 11;
+          const footX = kneeX + Math.sin(backAng) * 4 + 3;
+          
+          ctx.strokeStyle = blueSh; ctx.lineWidth = 18; ctx.lineCap = "round";
+          ctx.beginPath(); ctx.moveTo(-5, -48); ctx.lineTo(kneeX, -27); ctx.stroke();
+          
+          ctx.strokeStyle = "#dcdcdc"; ctx.lineWidth = 20;
+          ctx.beginPath(); ctx.moveTo(kneeX - 1, -28); ctx.lineTo(kneeX + 1, -25); ctx.stroke();
+          
+          ctx.strokeStyle = skinSh; ctx.lineWidth = 12;
+          ctx.beginPath(); ctx.moveTo(kneeX, -26); ctx.lineTo(footX, -10); ctx.stroke();
+          
+          ctx.fillStyle = "#cdbf9f"; roundRect(footX - 7, -11, 22, 9, 4); ctx.fill();
+          ctx.fillStyle = "#a98d5f"; roundRect(footX - 7, -4, 22, 4, 2); ctx.fill();
+
+          // Chân trước siêu dài của Luffy quật lên trời rồi nện xuống (Gomu Gomu no Ono!)
+          const hipX = 6;
+          const hipY = -48;
+          const targetX = axe.x;
+          const targetY = axe.h;
+
+          // Quần đùi chân trước kéo căng nhẹ
+          ctx.strokeStyle = blue; ctx.lineWidth = 18;
+          ctx.beginPath();
+          ctx.moveTo(hipX, hipY);
+          ctx.lineTo(hipX + (targetX - hipX) * 0.15, hipY + (targetY - hipY) * 0.15);
+          ctx.stroke();
+
+          // Gấu quần trắng
+          ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 20;
+          ctx.beginPath();
+          const gx = hipX + (targetX - hipX) * 0.15;
+          const gy = hipY + (targetY - hipY) * 0.15;
+          ctx.moveTo(gx - 2, gy); ctx.lineTo(gx + 2, gy);
+          ctx.stroke();
+
+          // Bắp chân trần siêu dài kéo giãn
+          ctx.strokeStyle = skin; ctx.lineWidth = 12;
+          ctx.beginPath();
+          ctx.moveTo(gx, gy);
+          ctx.lineTo(targetX, targetY);
+          ctx.stroke();
+
+          // Dép rơm nện xuống
+          ctx.save();
+          ctx.translate(targetX, targetY);
+          const rotateAng = axe.state === "slamming" ? Math.PI * 0.25 : 0;
+          ctx.rotate(rotateAng);
+          ctx.fillStyle = "#efe2c8"; roundRect(-7, -11, 22, 9, 4); ctx.fill();
+          ctx.fillStyle = "#a98d5f"; roundRect(-7, -4, 22, 4, 2); ctx.fill();
+          ctx.restore();
+
+          // Hiệu ứng luồng gió quật mạnh sấm sét khi đang giáng đòn
+          if (axe.state === "slamming") {
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.45)"; ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(targetX - 10, targetY - 45);
+            ctx.lineTo(targetX - 25, targetY - 15);
+            ctx.stroke();
+          }
+        }
+      } else {
+        this.drawLegs({ pants: blue, pantsSh: blueSh, shoe: "#efe2c8", shoeSh: "#cdbf9f", sole: "#a98d5f", isLuffy: true, skin: skin, skinSh: skinSh }, legs);
+      }
 
       // ---- áo vest đỏ mở, để lộ ngực ----
       const vg = ctx.createLinearGradient(-15, -90, 15, -52);
@@ -1004,6 +1131,38 @@
       const isSerious = (this.hp < 50);
 
       ctx.save();
+      
+      // Xoay toàn bộ cơ thể Zoro để tạo chuyển động nhào lộn hoặc xoay ngang chém gió thật sự!
+      const isAsura = this.state === "attack" && this.attack && this.attack.def.key === "asura";
+      if (isAsura) {
+        const a = this.attack;
+        const e = a.elapsed;
+        const sEnd = a.def.startup;
+        const act = a.def.active;
+        
+        ctx.translate(0, -60); // Tâm xoay nằm ở ngực
+        if (e < sEnd) {
+          const t = e / sEnd;
+          ctx.rotate(-t * Math.PI * 0.12); // Hơi cúi/ngửa người chuẩn bị nhảy
+        } else if (e < sEnd + act) {
+          const t = (e - sEnd) / act;
+          const spinCount = 2; // Xoay 2 vòng cực kỳ uy lực và rõ nét!
+          const angle = t * Math.PI * 2 * spinCount;
+          
+          if (!this.onGround) {
+            // TRÊN CAO: Nhào lộn lộn vòng (xoay quanh tâm ngực)
+            ctx.rotate(angle);
+          } else {
+            // MẶT ĐẤT: Xoay ngang người như lốc xoáy (co giãn trục X tạo ảo giác 3D)
+            ctx.scale(Math.cos(angle), 1);
+          }
+        } else {
+          const t = clamp((e - (sEnd + act)) / a.def.recovery, 0, 1);
+          ctx.rotate((1 - t) * Math.PI * 0.05); // Trả lại tư thế đứng vững sau khi xoay chém
+        }
+        ctx.translate(0, 60);
+      }
+
       ctx.translate(0, -bob);
       ctx.lineJoin = "round"; ctx.lineCap = "round";
 
@@ -1055,6 +1214,51 @@
 
       this.drawHeadZoro(skin, skinSh, green, greenSh, flash, isSerious);
       this.drawFrontArmZoro(swing, skin, skinSh, flash);
+
+      if (isAsura) {
+        // Demonic Ashura Aura
+        ctx.save();
+        ctx.globalCompositeOperation = "screen";
+        const darkGrad = ctx.createRadialGradient(0, -60, 10, 0, -60, 75);
+        darkGrad.addColorStop(0, "rgba(108, 22, 194, 0.75)");
+        darkGrad.addColorStop(0.5, "rgba(196, 28, 59, 0.38)");
+        darkGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = darkGrad;
+        ctx.beginPath(); ctx.arc(0, -60, 75, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+
+        // Draw multiple rotating swords (nine-sword style illusion!)
+        ctx.save();
+        ctx.translate(0, -60);
+        const rot = this.animTime * 6; // Xoay chậm và đầm hơn nhiều để nhìn rõ chém ngang xoay
+        ctx.rotate(rot);
+        
+        for (let i = 0; i < 3; i++) {
+          ctx.save();
+          ctx.rotate((i * Math.PI * 2) / 3);
+          
+          // Vẽ 1 thanh kiếm xoay phát sáng xanh lục/tím huyền ảo
+          ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 4.8; ctx.lineCap = "round";
+          ctx.shadowColor = "#8e2bbf"; ctx.shadowBlur = 12;
+          ctx.beginPath();
+          ctx.moveTo(15, 0);
+          ctx.lineTo(82, 0);
+          ctx.stroke();
+          
+          // Chuôi kiếm
+          ctx.strokeStyle = "#a30e0e"; ctx.lineWidth = 5;
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(15, 0); ctx.stroke();
+          ctx.shadowBlur = 0;
+          ctx.restore();
+        }
+        ctx.restore();
+
+        // Vòng chém xoáy tròn lớn bao bọc quanh người
+        ctx.strokeStyle = "rgba(142, 43, 191, 0.48)"; ctx.lineWidth = 15;
+        ctx.beginPath(); ctx.arc(0, -60, 72, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.85)"; ctx.lineWidth = 3.2;
+        ctx.beginPath(); ctx.arc(0, -60, 68, 0, Math.PI * 2); ctx.stroke();
+      }
 
       ctx.restore();
     }
@@ -1356,8 +1560,14 @@
         }
         if (Math.random() < 0.01) intents.jump = true;
       } else if (adist > 74) {
-        // khoảng cách trung: tiến hoặc bắn
-        if (Math.random() < 0.04) intents.ranged = true;
+        // khoảng cách trung: tiến, bắn hoặc kích hoạt Ashura xoay nhảy
+        if (Math.random() < 0.04) {
+          if (Math.random() < 0.35 && f.id === "zoro") {
+            intents.block = true; intents.ranged = true; // Kích hoạt Ashura
+          } else {
+            intents.ranged = true;
+          }
+        }
         else if (dist > 0) intents.right = true; else intents.left = true;
       } else {
         // cận chiến

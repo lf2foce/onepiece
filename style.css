@@ -163,6 +163,7 @@ kbd {
 .tag.near { background: #2c4a8f; }
 .tag.far  { background: #2c7f5a; }
 .tag.ult  { background: #8f2c6a; }
+.tag.spec { background: #cf6b2b; }
 .hint { margin-top: 12px; font-size: 13px; opacity: .8; }
 
 .result-card h2 { font-size: clamp(26px, 6vw, 44px); letter-spacing: 2px; }
