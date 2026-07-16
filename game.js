@@ -122,6 +122,7 @@
       // vệt đạn cho tuyệt chiêu
       if (this.d.kind === "redhawk") Game.addTrail(this.x - this.dir * 22, this.y, "#ff7a2b", "#ffd23f");
       else if (this.d.kind === "tatsumaki") Game.addTrail(this.x - this.dir * 10, this.y + (Math.random()*80 - 40), "#39d67e", "#bfffdb");
+      else if (this.d.kind === "sanzen") Game.addTrail(this.x - this.dir * 14, this.y + (Math.random()*70 - 35), "#39d67e", "#d2ffe4");
       if (this.life <= 0 || this.x < -80 || this.x > W + 80) this.dead = true;
     }
     draw() {
@@ -318,6 +319,41 @@
           ctx.stroke();
         }
         ctx.globalAlpha = 1;
+      } else if (kind === "sanzen") {
+        // Santoryu Ougi: Sanzen Sekai — đĩa kiếm khí xoay (nhiều katana toả tròn)
+        ctx.save();
+        // đĩa khí xanh phát sáng
+        ctx.globalCompositeOperation = "lighter";
+        const disc = ctx.createRadialGradient(0, 0, 6, 0, 0, 62);
+        disc.addColorStop(0, "rgba(210,255,225,0.85)");
+        disc.addColorStop(0.55, "rgba(60,220,120,0.42)");
+        disc.addColorStop(1, "rgba(30,150,80,0)");
+        ctx.fillStyle = disc;
+        ctx.beginPath(); ctx.arc(0, 0, 62, 0, Math.PI * 2); ctx.fill();
+        ctx.globalCompositeOperation = "source-over";
+        // các lưỡi katana toả tròn, xoay
+        ctx.rotate(spin * 1.1);
+        for (let i = 0; i < 6; i++) {
+          ctx.save();
+          ctx.rotate((i * Math.PI) / 3);
+          // chuôi
+          ctx.strokeStyle = "#2c7a3f"; ctx.lineWidth = 4.5; ctx.lineCap = "round";
+          ctx.beginPath(); ctx.moveTo(2, 0); ctx.lineTo(12, 0); ctx.stroke();
+          // đốc vàng
+          ctx.fillStyle = "#d4a017"; ctx.beginPath(); ctx.arc(12, 0, 2.4, 0, Math.PI * 2); ctx.fill();
+          // lưỡi kiếm sáng
+          const bg = ctx.createLinearGradient(14, 0, 60, 0);
+          bg.addColorStop(0, "#cfeed8"); bg.addColorStop(0.5, "#ffffff"); bg.addColorStop(1, "#eafff2");
+          ctx.strokeStyle = bg; ctx.lineWidth = 5.5;
+          ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(60, 0); ctx.stroke();
+          ctx.restore();
+        }
+        // lõi sáng trung tâm
+        ctx.fillStyle = "rgba(255,255,255,0.95)";
+        ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "rgba(120,255,180,0.6)";
+        ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
       }
       ctx.restore();
     }
@@ -371,8 +407,8 @@
       if (!this.canAct()) return;
       const def = this.moves[kind];
       if (!def) return;
-      // SUPER: đầy Haki 100% + (tuyệt chiêu HOẶC ↓+skill) -> siêu chiêu (khựng + mạnh)
-      const canSuper = (kind === "special" || kind === "axe" || kind === "asura");
+      // SUPER: đầy Haki 100% -> siêu chiêu (khựng + mạnh). king/sanzen là chiêu riêng chỉ có ở super
+      const canSuper = (kind === "special" || kind === "king" || kind === "sanzen");
       const isSuper = canSuper && this.meter >= 100;
       if (!isSuper && def.meterCost && this.meter < def.meterCost) return; // chưa đủ Haki
       if (isSuper) this.meter -= 100;
@@ -480,21 +516,21 @@
           }
 
           // tấn công (edge)
-          const move2 = this.id === "luffy" ? "axe" : "asura";   // chiêu đặc biệt / SIÊU CHIÊU 2
+          const special2 = this.id === "luffy" ? "axe"  : "asura";   // đặc biệt thường (chưa đầy Haki)
+          const ult2     = this.id === "luffy" ? "king" : "sanzen";  // SIÊU CHIÊU 2 (đầy Haki)
+          // ↓ + skill: đầy 100% -> chiêu ulti riêng, chưa đầy -> đặc biệt thường
+          const downSkill = () => {
+            this.startAttack(this.meter >= 100 ? ult2 : special2);
+            if (this.state === "attack") Sound.special();
+          };
           if (intents.close)   { this.startAttack("close");   Sound[this.moves.close.sfx](); }
           else if (intents.special) {
-            if (intents.block) {                 // ↓ + tuyệt chiêu -> chiêu 2
-              this.startAttack(move2);
-              if (this.state === "attack") Sound.special();
-            } else {                             // tuyệt chiêu -> chiêu 1
-              this.startAttack("special");
-            }
+            if (intents.block) downSkill();          // ↓ + tuyệt chiêu -> chiêu 2
+            else this.startAttack("special");        // tuyệt chiêu -> chiêu 1
           }
           else if (intents.ranged) {
-            if (intents.block) {                 // ↓ + skill xa -> chiêu 2 (giữ tương thích)
-              this.startAttack(move2);
-              if (this.state === "attack") Sound.special();
-            } else {
+            if (intents.block) downSkill();          // ↓ + skill xa -> chiêu 2 (tương thích)
+            else {
               this.startAttack("ranged");
               if (this.state === "attack") Sound[this.moves.ranged.sfx]();
             }
@@ -1104,7 +1140,7 @@
         const target = p.owner === this.luffy ? this.zoro : this.luffy;
         if (!p.dead && target.state !== "ko" && rectsOverlap(p.rect, target.body)) {
           const dir = Math.sign(p.vx) || target.facing*-1;
-          target.takeHit(p.d.dmg, p.d.knockback, p.d.launch, dir, p.d.kind==="redhawk"||p.d.kind==="tatsumaki", p.owner);
+          target.takeHit(p.d.dmg, p.d.knockback, p.d.launch, dir, p.d.kind==="redhawk"||p.d.kind==="tatsumaki"||p.d.super, p.owner);
           p.owner.gainMeter(6);
           if (p.d.super) { this.flashScreen = 1.3; this.hitstop = Math.max(this.hitstop, 150); this.addHitSpark(p.x, p.y, false, true); }
           p.dead = true;
@@ -1688,6 +1724,7 @@
       const poseFrac = params.get("pe") ? +params.get("pe") : 0.42;
       const poseFighter = (f, moveKey) => {
         if (moveKey === "none") return;
+        f.meter = 100;                       // để pose được cả king/sanzen (cần 100)
         f.startAttack(moveKey);
         if (f.attack) {
           const d = f.attack.def;
@@ -1700,6 +1737,21 @@
         if (params.get("pose")) {
           poseFighter(Game.luffy, params.get("l") || "close");
           poseFighter(Game.zoro, params.get("z") || "close");
+          Game.superFreeze = 0; Game.superFocus = null;   // bỏ chớp super để soi rõ tư thế
+        }
+        // spawn 1 projectile bất kỳ để chụp (sproj=sanzen / redhawk / ...)
+        const sproj = params.get("sproj");
+        if (sproj) {
+          const owner = sproj === "sanzen" ? Game.zoro : Game.luffy;
+          const mv = (MOVES.zoro[sproj] && MOVES.zoro[sproj].proj) ? MOVES.zoro[sproj] : MOVES.luffy[sproj];
+          if (mv && mv.proj) {
+            let pd = Object.assign({}, mv.proj);
+            if (params.get("psuper")) pd = Object.assign(pd, { w: pd.w * 1.6, h: pd.h * 1.6, super: true });
+            const pr = new Projectile(owner, pd);
+            pr.x = W * 0.5; pr.y = GROUND - 76;
+            Game.projectiles.push(pr);
+            Game.demoFreeze = true;
+          }
         }
         if (params.get("lx")) Game.luffy.x = +params.get("lx");
         if (params.get("zx")) Game.zoro.x = +params.get("zx");

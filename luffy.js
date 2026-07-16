@@ -25,6 +25,11 @@
         dmg:22, startup:230, active:0, recovery:430, meterCost:50, meterGain:0,
         sfx:"special",
         proj:{ kind:"redhawk", speed:640, w:66, h:44, dmg:22, knockback:520, launch:-180, life:2200, color:"#ff5a2b" } },
+      // SIÊU CHIÊU 2 (↓+skill khi full Haki) — Gear 3 nắm đấm khổng lồ
+      king: { key:"king", name:"Gomu Gomu no King Kong Gun", type:"melee",
+        dmg:20, startup:320, active:220, recovery:440, meterCost:100, meterGain:0,
+        reach:{dx:18,dy:-150,w:220,h:190}, knockback:560, launch:-150,
+        sfx:"punch", color:"#ff6b6b" },
     };
 
     // ---------------------------------------------------------------- Leg Swing Math for Axe Kick
@@ -441,6 +446,50 @@
       const ctx = document.getElementById("game").getContext("2d");
       const attacking = this.state === "attack" && this.attack;
       const y = -86;
+
+      // ===== SIÊU CHIÊU 2: GEAR 3 — GOMU GOMU NO KING KONG GUN (nắm đấm khổng lồ) =====
+      if (attacking && this.attack.def.key === "king") {
+        const reach = 26 + Math.max(0, swing) * 150;   // đấm khổng lồ vươn cực xa
+        const fistR = 40 + Math.max(0, swing) * 24;    // phồng to dần
+        const fy = -92;
+        ctx.save();
+        ctx.lineCap = "round"; ctx.lineJoin = "round";
+        // vệt tốc độ khi nện
+        if (swing > 0.5) {
+          ctx.strokeStyle = "rgba(255,255,255,0.35)"; ctx.lineWidth = fistR * 1.6;
+          ctx.beginPath(); ctx.moveTo(20, fy); ctx.lineTo(reach - fistR * 0.5, fy); ctx.stroke();
+        }
+        // cánh tay khổng lồ phồng (da) + viền
+        ctx.strokeStyle = "#b07c50"; ctx.lineWidth = fistR * 0.95;
+        ctx.beginPath(); ctx.moveTo(6, -94); ctx.lineTo(reach - fistR * 0.5, fy); ctx.stroke();
+        ctx.strokeStyle = skin; ctx.lineWidth = fistR * 0.8;
+        ctx.beginPath(); ctx.moveTo(6, -94); ctx.lineTo(reach - fistR * 0.5, fy); ctx.stroke();
+        // ống tay áo đỏ ở gốc
+        ctx.strokeStyle = "#c92a1c"; ctx.lineWidth = fistR * 0.86;
+        ctx.beginPath(); ctx.moveTo(2, -95); ctx.lineTo(16, -93); ctx.stroke();
+        // NẮM ĐẤM khổng lồ
+        const fg = ctx.createRadialGradient(reach - 8, fy - 10, 6, reach, fy, fistR);
+        fg.addColorStop(0, "#ffe6cf"); fg.addColorStop(0.6, skin); fg.addColorStop(1, "#c98a5c");
+        ctx.fillStyle = "#a5734a";
+        ctx.beginPath(); ctx.arc(reach, fy, fistR + 3, 0, Math.PI * 2); ctx.fill();  // viền
+        ctx.fillStyle = fg;
+        ctx.beginPath(); ctx.arc(reach, fy, fistR, 0, Math.PI * 2); ctx.fill();
+        // đốt ngón (4 khớp)
+        ctx.strokeStyle = "rgba(150,95,58,0.5)"; ctx.lineWidth = 2.5;
+        for (let i = -1; i <= 2; i++) {
+          ctx.beginPath();
+          ctx.arc(reach + fistR * 0.55, fy - fistR * 0.5 + (i + 1) * fistR * 0.33, fistR * 0.18, -0.9, 0.9);
+          ctx.stroke();
+        }
+        // ngón cái
+        ctx.fillStyle = skin;
+        ctx.beginPath(); ctx.arc(reach - fistR * 0.5, fy + fistR * 0.55, fistR * 0.28, 0, Math.PI * 2); ctx.fill();
+        // ánh sáng
+        ctx.fillStyle = "rgba(255,240,220,0.6)";
+        ctx.beginPath(); ctx.arc(reach - fistR * 0.35, fy - fistR * 0.4, fistR * 0.22, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        return;
+      }
 
       // Hiệu ứng liên hoàn đấm mờ cho chiêu Gatling Cao Su
       if (attacking && this.attack.def.key === "ranged") {

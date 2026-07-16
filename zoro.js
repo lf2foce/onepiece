@@ -24,6 +24,11 @@
         dmg:21, startup:210, active:0, recovery:440, meterCost:50, meterGain:0,
         sfx:"special",
         proj:{ kind:"tatsumaki", speed:460, w:70, h:120, dmg:21, knockback:480, launch:-220, life:2400, color:"#39d67e" } },
+      // SIÊU CHIÊU 2 (↓+skill khi full Haki) — đĩa kiếm khí xoay bay
+      sanzen: { key:"sanzen", name:"Santoryu Ougi: Sanzen Sekai", type:"projectile",
+        dmg:22, startup:300, active:0, recovery:440, meterCost:100, meterGain:0,
+        sfx:"slash",
+        proj:{ kind:"sanzen", speed:540, w:96, h:150, dmg:22, knockback:540, launch:-160, life:2600, color:"#8fffbf" } },
     };
 
     // Helper draw round rect
