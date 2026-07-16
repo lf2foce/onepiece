@@ -120,6 +120,14 @@ html, body {
 .btn small { font-weight: 600; opacity: .75; }
 .btn:hover { transform: translateY(-2px); }
 .btn:active { transform: translateY(4px); box-shadow: 0 3px 0 #b9861a, 0 6px 14px rgba(0,0,0,.4); }
+.btn-sandbox {
+  background: linear-gradient(180deg, #9c27b0, #673ab7);
+  color: #fff;
+  box-shadow: 0 8px 0 #4a148c, 0 12px 22px rgba(0,0,0,.45);
+}
+.btn-sandbox:active {
+  box-shadow: 0 3px 0 #4a148c, 0 6px 14px rgba(0,0,0,.45);
+}
 .btn-ghost {
   background: transparent;
   color: #cfe0ff;

@@ -117,6 +117,20 @@
   const rectsOverlap = (a, b) =>
     a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 
+  const generateJaggedLine = (x1, y1, x2, y2, segments = 3, offset = 6) => {
+    const pts = [];
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    for (let i = 1; i < segments; i++) {
+      const t = i / segments;
+      const px = x1 + dx * t + (Math.random() * 2 - 1) * offset;
+      const py = y1 + dy * t + (Math.random() * 2 - 1) * offset;
+      pts.push({ x: px, y: py });
+    }
+    pts.push({ x: x2, y: y2 });
+    return pts;
+  };
+
   // ================================================================ MOVE SETS
   // type: "melee" (hitbox theo hướng) | "projectile" (bắn đạn)
   // Thời gian tính bằng ms: startup -> active -> recovery
@@ -493,6 +507,36 @@
     update(dt, opp, intents) {
       this.animTime += dt;
 
+      // Hạt bụi dập dềnh khi lướt đất (như lốc xoáy Ashura của Zoro)
+      const isAsura = this.state === "attack" && this.attack && this.attack.def.key === "asura";
+      if (isAsura && this.attack.phase === "active" && Math.random() < 0.35) {
+        Game.sparks.push({
+          kind: "dust",
+          x: this.x - this.facing * 10,
+          y: GROUND - 4,
+          vx: -this.facing * (120 + Math.random() * 80),
+          vy: -Math.random() * 40,
+          life: 250, life0: 250,
+          r: 4 + Math.random() * 4,
+          color: "#d0a080" // Bụi gỗ boong tàu Going Merry
+        });
+      }
+
+      // Tia sét Haki Bá Vương dũng mãnh dập dềnh khi nộ đầy 100%
+      if (this.meter >= 100 && Math.random() < 0.08) {
+        const col1 = this.id === "luffy" ? "#ff2a2a" : "#39d67e";
+        const col2 = this.id === "luffy" ? "#000000" : "#ffffff";
+        Game.sparks.push({
+          kind: "lightning",
+          x: this.x + (Math.random() * 40 - 20),
+          y: this.y - this.height * Math.random(),
+          points: generateJaggedLine(0, 0, Math.random() * 60 - 30, Math.random() * -60 - 10),
+          life: 200, life0: 200,
+          color1: col1, color2: col2,
+          width: 2 + Math.random() * 2
+        });
+      }
+
       // ----- xử lý va chạm đạn của đối thủ (kiểm tra ở Game) -----
 
       if (this.state === "ko") {
@@ -576,6 +620,12 @@
         if (a.elapsed < sEnd) a.phase = "startup";
         else if (a.elapsed < aEnd || d.type==="projectile") a.phase = "active";
         else a.phase = "recovery";
+
+        // Sinh hiệu ứng giậm đất khổng lồ dẹt khi Luffy nện rìu xuống mặt đất
+        if (this.id === "luffy" && d.key === "axe" && a.elapsed >= sEnd && !a.shaked) {
+          a.shaked = true;
+          Game.addAxeSlamSparks(this.x + this.facing * 220); // Điểm nện gót chân của Luffy
+        }
 
         // sinh projectile (hỗ trợ loạt đạn hoặc đơn lẻ)
         if (d.type === "projectile" && a.elapsed >= sEnd) {
@@ -917,11 +967,15 @@
       this.aggro = 0.6;
     }
     think(dt, opp) {
+      const intents = { left:false,right:false,jump:false,block:false,close:false,ranged:false,special:false };
+      if (Game.mode === "sandbox") {
+        // Trong chế độ phòng thử nghiệm sandbox, Zoro máy hoàn toàn đứng yên làm bao cát
+        return intents;
+      }
       this.decideTimer -= dt * 1000;
       const f = this.f;
       const dist = opp.x - f.x;         // >0 đối thủ bên phải
       const adist = Math.abs(dist);
-      const intents = { left:false,right:false,jump:false,block:false,close:false,ranged:false,special:false };
 
       if (f.state === "ko" || opp.state === "ko") { this.want = intents; return intents; }
 
@@ -1019,7 +1073,11 @@
       this.mode = mode;
       this.luffy.wins = 0; this.zoro.wins = 0;
       this.round = 1;
-      this.ai = mode === "1p" ? new AI(this.zoro) : null;
+      this.ai = (mode === "1p" || mode === "sandbox") ? new AI(this.zoro) : null;
+      if (mode === "sandbox") {
+        this.ai.decideTimer = 99999999; // Giúp đối thủ Zoro đứng yên để huấn luyện/thử nghiệm đòn đánh
+        this.ai.want = { left:false,right:false,jump:false,block:false,close:false,ranged:false,special:false };
+      }
       this.hide("menu"); this.hide("result");
       this.show("pauseHint");
       this.startRound();
@@ -1091,6 +1149,32 @@
         color: Math.random()<0.5 ? c1 : c2,
         r: 2 + Math.random()*3,
       });
+    },
+
+    addAxeSlamSparks(x) {
+      // Vòng xung kích khổng lồ nằm ngang dẹt trên sàn boong tàu
+      this.sparks.push({
+        kind: "ring",
+        x, y: GROUND,
+        vx: 0, vy: 0,
+        life: 420, life0: 400,
+        r: 10, rMax: 150,
+        color: "#ffffff"
+      });
+      // Khói bụi đất bay thốc dữ dội hai bên
+      for (let i = 0; i < 18; i++) {
+        const dir = i % 2 ? 1 : -1;
+        this.sparks.push({
+          kind: "dust",
+          x, y: GROUND,
+          vx: dir * (120 + Math.random() * 220),
+          vy: -35 - Math.random() * 110,
+          life: 380 + Math.random() * 250,
+          life0: 380 + Math.random() * 250,
+          r: 5 + Math.random() * 8,
+          color: "#e8c8a0"
+        });
+      }
     },
 
     // Hiệu ứng 2 chưởng va nhau (strong=true khi triệt tiêu cả hai)
@@ -1171,14 +1255,26 @@
       // cập nhật spark luôn (kể cả lúc pause để mượt) — nhưng bỏ qua nếu menu
       for (const s of this.sparks) {
         if (s.kind === "ring") { s.life -= dt*1000; continue; }
-        s.x += s.vx*dt; s.y += s.vy*dt; s.vy += 900*dt; s.life -= dt*1000;
+        if (s.kind === "lightning") { s.life -= dt*1000; continue; }
+        s.x += s.vx*dt; s.y += s.vy*dt;
+        if (s.kind !== "dust") s.vy += 900*dt; // Hạt bụi trôi tự nhiên không rơi nhanh như tia lửa sắt
+        s.life -= dt*1000;
       }
       this.sparks = this.sparks.filter(s => s.life > 0);
 
       if (this.state !== "playing") return;
 
-      // đồng hồ
-      this.timeLeft -= dt;
+      // đồng hồ (ở chế độ thử nghiệm không đếm ngược thời gian)
+      if (this.mode !== "sandbox") {
+        this.timeLeft -= dt;
+      } else {
+        this.timeLeft = 99; // Cố định 99 giây cho thoải mái thử nghiệm đòn đánh
+        // Vô hạn HP & Haki cho chế độ thử nghiệm
+        this.luffy.hp = 100;
+        this.zoro.hp = 100;
+        this.luffy.meter = 100;
+        this.zoro.meter = 100;
+      }
 
       // intents
       const i1 = this.humanIntents("p1");
@@ -1467,6 +1563,31 @@
           ctx.strokeStyle = s.color;
           ctx.lineWidth = clamp(4 * (1 - p), 1, 4);
           ctx.beginPath(); ctx.arc(s.x, s.y, s.r + (s.rMax - s.r) * p, 0, Math.PI*2); ctx.stroke();
+          continue;
+        }
+        if (s.kind === "lightning") {
+          const p = s.life / s.life0; // 1 -> 0
+          ctx.globalAlpha = p;
+          ctx.strokeStyle = s.color1;
+          ctx.lineWidth = s.width * p;
+          ctx.shadowColor = s.color2;
+          ctx.shadowBlur = 6;
+          ctx.beginPath();
+          ctx.moveTo(s.x, s.y);
+          for (const pt of s.points) {
+            ctx.lineTo(s.x + pt.x, s.y + pt.y);
+          }
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+          continue;
+        }
+        if (s.kind === "dust") {
+          const p = 1 - s.life / s.life0; // 0 -> 1
+          ctx.globalAlpha = (1 - p) * 0.55;
+          ctx.fillStyle = s.color;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r * (1 + p * 1.5), 0, Math.PI * 2);
+          ctx.fill();
           continue;
         }
         ctx.globalAlpha = clamp(s.life/300, 0, 1);
