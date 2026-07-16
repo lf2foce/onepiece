@@ -144,6 +144,9 @@
       this.t += dt * 1000;
       this.x += this.vx * dt;
       this.life -= dt * 1000;
+      // vệt đạn cho tuyệt chiêu
+      if (this.d.kind === "redhawk") Game.addTrail(this.x - this.dir * 22, this.y, "#ff7a2b", "#ffd23f");
+      else if (this.d.kind === "tatsumaki") Game.addTrail(this.x - this.dir * 10, this.y + (Math.random()*80 - 40), "#39d67e", "#bfffdb");
       if (this.life <= 0 || this.x < -80 || this.x > W + 80) this.dead = true;
     }
     draw() {
@@ -225,6 +228,9 @@
       this.width = 60;
       this.height = 118;
       this.wins = 0;
+      this.combo = 0;               // số đòn liên hoàn ĐÃ đánh trúng
+      this.comboTimer = 0;          // hết giờ -> reset combo
+      this.comboPop = 0;            // hiệu ứng phóng to khi +combo
     }
 
     // hộp thân để tính va chạm
@@ -237,6 +243,7 @@
       this.hp = 100; this.meter = Math.min(this.meter, 30);
       this.state = "idle"; this.attack = null; this.hurtTimer = 0;
       this.blocking = false; this.flash = 0;
+      this.combo = 0; this.comboTimer = 0; this.comboPop = 0;
     }
 
     canAct() { return this.state !== "attack" && this.state !== "hurt" && this.state !== "ko"; }
@@ -254,32 +261,44 @@
       this.vx *= 0.2;
     }
 
-    takeHit(dmg, kb, launch, fromDir, isSpecial) {
+    takeHit(dmg, kb, launch, fromDir, isSpecial, attacker) {
       if (this.state === "ko") return;
       let real = dmg;
       let stun = isSpecial ? 520 : 340;
+      const blocked = this.blocking && this.onGround;
       // Đỡ đòn: giảm 80% sát thương, ít giật, đứng vững
-      if (this.blocking && this.onGround) {
+      if (blocked) {
         real = Math.max(1, Math.round(dmg * 0.2));
         kb *= 0.35; launch = 0; stun = 140;
         this.gainMeter(dmg * 0.4);
+        if (attacker) attacker.combo = 0;          // đỡ được -> ngắt combo
       } else {
         this.state = "hurt";
         this.hurtTimer = stun;
         this.vy = launch;
         this.onGround = launch < 0 ? false : this.onGround;
         this.gainMeter(dmg * 0.6);
+        if (attacker) {                            // cộng combo cho người tấn công
+          attacker.combo++;
+          attacker.comboTimer = 1400;
+          attacker.comboPop = 1;
+        }
       }
       this.hp = clamp(this.hp - real, 0, 100);
       this.vx = kb * fromDir;
       this.flash = 140;
       Sound.hit();
-      Game.addHitSpark(this.x, this.y - 70, this.blocking);
-      Game.shake(isSpecial ? 12 : 6);
+      Game.addHitSpark(this.x, this.y - 70, blocked, isSpecial);
+      Game.shake(isSpecial ? 13 : 6);
+      // HITSTOP — đóng băng vài chục ms để cú đánh "nặng tay"
+      Game.hitstop = Math.max(Game.hitstop, blocked ? 45 : (isSpecial ? 130 : 85));
+      if (isSpecial && !blocked) Game.flashScreen = 1;
       if (this.hp <= 0) {
         this.hp = 0; this.state = "ko";
         this.attack = null;
+        if (attacker) attacker.comboTimer = 1600;  // giữ combo hiện lúc KO
         Sound.ko();
+        Game.shake(16);
       }
     }
 
@@ -429,14 +448,21 @@
       ctx.restore();
     }
 
-    // tính góc tay cho đòn đánh
+    // tiến trình tay/kiếm: lấy đà (âm) -> bổ tới nhanh (1) -> thu về (0)
     armSwing() {
       if (this.state === "attack" && this.attack) {
-        const d = this.attack.def; const a = this.attack;
-        const total = d.startup + d.active + d.recovery;
-        const p = clamp(a.elapsed / total, 0, 1);
-        // vung ra rồi thu về
-        return Math.sin(p * Math.PI) ; // 0..1..0
+        const d = this.attack.def, a = this.attack, e = a.elapsed;
+        const sEnd = d.startup;
+        const act = d.active || 130;           // cửa sổ vung cho đòn projectile
+        const aEnd = sEnd + act;
+        if (e < sEnd) {
+          return -0.32 * (e / sEnd);           // kéo ra sau lấy đà
+        } else if (e < aEnd) {
+          const t = (e - sEnd) / act;
+          return -0.32 + 1.32 * (1 - Math.pow(1 - t, 3)); // bổ tới (ease-out)
+        }
+        const t = clamp((e - aEnd) / d.recovery, 0, 1);
+        return 1 - t;                          // thu về
       }
       return 0;
     }
@@ -858,6 +884,8 @@
     roundTime: 60,
     timeLeft: 60,
     shakeAmt: 0,
+    hitstop: 0,          // ms đóng băng khi trúng đòn
+    flashScreen: 0,      // 0..1 chớp trắng cho tuyệt chiêu
     announce: null,      // {text, t}
     lastPressAttack: { p1:{}, p2:{} },
 
@@ -899,6 +927,7 @@
       this.luffy.meter = 0; this.zoro.meter = 0;
       this.projectiles = [];
       this.sparks = [];
+      this.hitstop = 0; this.flashScreen = 0;
       this.timeLeft = this.roundTime;
       this.state = "playing";
       this.announce = { text: `HIỆP ${this.round}`, sub:"CHIẾN ĐẤU!", t: 1600 };
@@ -918,18 +947,37 @@
 
     shake(a) { this.shakeAmt = Math.max(this.shakeAmt, a); },
 
-    addHitSpark(x, y, blocked) {
-      for (let i=0;i<(blocked?6:12);i++){
+    addHitSpark(x, y, blocked, isSpecial) {
+      const n = blocked ? 7 : (isSpecial ? 22 : 13);
+      const spd = isSpecial ? 420 : 280;
+      for (let i=0;i<n;i++){
         this.sparks.push({
+          kind: "dot",
           x, y,
-          vx:(Math.random()*2-1)*260,
-          vy:(Math.random()*-1-0.2)*260,
-          life: 300 + Math.random()*200,
-          max: 500,
+          vx:(Math.random()*2-1)*spd,
+          vy:(Math.random()*-1-0.2)*spd,
+          life: 300 + Math.random()*220,
           color: blocked ? "#8fd0ff" : (Math.random()<0.5?"#ffd23f":"#ff6b3f"),
-          r: 2+Math.random()*3,
+          r: 2+Math.random()*3.5,
         });
       }
+      // vòng xung kích
+      this.sparks.push({
+        kind: "ring", x, y, vx:0, vy:0,
+        life: isSpecial ? 320 : 210, life0: isSpecial ? 320 : 210,
+        r: 6, rMax: isSpecial ? 64 : 34,
+        color: blocked ? "#bfe4ff" : "#fff3c4",
+      });
+    },
+
+    addTrail(x, y, c1, c2) {
+      this.sparks.push({
+        kind: "dot", x, y,
+        vx:(Math.random()*2-1)*70, vy:(Math.random()*2-1)*70,
+        life: 200 + Math.random()*160,
+        color: Math.random()<0.5 ? c1 : c2,
+        r: 2 + Math.random()*3,
+      });
     },
 
     // ---------- vòng lặp chính ----------
@@ -960,6 +1008,14 @@
     },
 
     update(dt) {
+      if (this.demoFreeze) return;   // chỉ dùng khi chụp ảnh minh hoạ
+      // HITSTOP: đóng băng toàn bộ vài chục ms để cú đánh dội lại
+      if (this.state === "playing" && this.hitstop > 0) {
+        this.hitstop -= dt * 1000;
+        return;
+      }
+      if (this.flashScreen > 0) this.flashScreen = Math.max(0, this.flashScreen - dt * 6);
+
       // hiệu ứng announce đếm ngược
       if (this.announce && this.announce.t < 999999) {
         this.announce.t -= dt * 1000;
@@ -967,8 +1023,15 @@
       }
       if (this.shakeAmt > 0) this.shakeAmt = Math.max(0, this.shakeAmt - dt*40);
 
+      // đếm giờ combo cho cả hai
+      for (const f of this.players) {
+        if (f.comboTimer > 0) { f.comboTimer -= dt * 1000; if (f.comboTimer <= 0) f.combo = 0; }
+        if (f.comboPop > 0) f.comboPop = Math.max(0, f.comboPop - dt * 6);
+      }
+
       // cập nhật spark luôn (kể cả lúc pause để mượt) — nhưng bỏ qua nếu menu
       for (const s of this.sparks) {
+        if (s.kind === "ring") { s.life -= dt*1000; continue; }
         s.x += s.vx*dt; s.y += s.vy*dt; s.vy += 900*dt; s.life -= dt*1000;
       }
       this.sparks = this.sparks.filter(s => s.life > 0);
@@ -998,7 +1061,7 @@
         const target = p.owner === this.luffy ? this.zoro : this.luffy;
         if (!p.dead && target.state !== "ko" && rectsOverlap(p.rect, target.body)) {
           const dir = Math.sign(p.vx) || target.facing*-1;
-          target.takeHit(p.d.dmg, p.d.knockback, p.d.launch, dir, p.d.kind==="redhawk"||p.d.kind==="tatsumaki");
+          target.takeHit(p.d.dmg, p.d.knockback, p.d.launch, dir, p.d.kind==="redhawk"||p.d.kind==="tatsumaki", p.owner);
           p.owner.gainMeter(6);
           p.dead = true;
         }
@@ -1037,7 +1100,7 @@
         attacker.attack.hit.add(defender);
         const d = attacker.attack.def;
         const dir = attacker.facing;
-        defender.takeHit(d.dmg, d.knockback, d.launch, dir, false);
+        defender.takeHit(d.dmg, d.knockback, d.launch, dir, false, attacker);
         attacker.gainMeter(d.meterGain || 0);
       }
     },
@@ -1107,8 +1170,15 @@
 
       ctx.restore();
 
+      // chớp trắng khi trúng tuyệt chiêu
+      if (this.flashScreen > 0) {
+        ctx.fillStyle = `rgba(255,255,255,${clamp(this.flashScreen, 0, 1) * 0.45})`;
+        ctx.fillRect(0, 0, W, H);
+      }
+
       // HUD (không rung)
       this.drawHUD();
+      this.drawCombos();
       this.drawAnnounce();
     },
 
@@ -1157,6 +1227,14 @@
 
     drawSparks() {
       for (const s of this.sparks) {
+        if (s.kind === "ring") {
+          const p = 1 - s.life / s.life0;              // 0 -> 1
+          ctx.globalAlpha = clamp(1 - p, 0, 1) * 0.9;
+          ctx.strokeStyle = s.color;
+          ctx.lineWidth = clamp(4 * (1 - p), 1, 4);
+          ctx.beginPath(); ctx.arc(s.x, s.y, s.r + (s.rMax - s.r) * p, 0, Math.PI*2); ctx.stroke();
+          continue;
+        }
         ctx.globalAlpha = clamp(s.life/300, 0, 1);
         ctx.fillStyle = s.color;
         ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
@@ -1181,6 +1259,27 @@
       // số hiệp thắng (chấm tròn)
       this.drawWinPips(this.luffy, 24+8, 64, false);
       this.drawWinPips(this.zoro, W-24-8, 64, true);
+    },
+
+    drawCombos() {
+      const one = (f, cx, tint) => {
+        if (f.combo < 2) return;
+        const pop = 1 + f.comboPop * 0.5;
+        ctx.save();
+        ctx.translate(cx, 150);
+        ctx.scale(pop, pop);
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillStyle = tint;
+        ctx.strokeStyle = "rgba(0,0,0,.6)"; ctx.lineWidth = 5;
+        ctx.font = "900 46px Trebuchet MS, sans-serif";
+        ctx.strokeText(`${f.combo}`, 0, 0); ctx.fillText(`${f.combo}`, 0, 0);
+        ctx.font = "800 18px Trebuchet MS, sans-serif";
+        ctx.fillStyle = "#fff";
+        ctx.strokeText("COMBO", 0, 30); ctx.fillText("COMBO", 0, 30);
+        ctx.restore();
+      };
+      one(this.luffy, W*0.26, "#ffcf33");
+      one(this.zoro,  W*0.74, "#8fffbf");
     },
 
     drawBar(f, edgeX, right) {
@@ -1283,6 +1382,22 @@
         }
         if (params.get("lx")) Game.luffy.x = +params.get("lx");
         if (params.get("zx")) Game.zoro.x = +params.get("zx");
+        // dựng cảnh minh hoạ hiệu ứng (combo + vòng xung kích + chớp)
+        const demo = params.get("demo");
+        if (demo) {
+          const isSp = demo === "special";
+          Game.luffy.combo = isSp ? 6 : 4; Game.luffy.comboPop = 0.6;
+          Game.zoro.state = "hurt"; Game.zoro.flash = 60;
+          const ix = Game.zoro.x - 24, iy = Game.zoro.y - 70;
+          for (let i = 0; i < 16; i++) {
+            const a = (i / 16) * Math.PI * 2, rr = 8 + Math.random() * 24;
+            Game.sparks.push({ kind: "dot", x: ix + Math.cos(a) * rr, y: iy + Math.sin(a) * rr,
+              vx: 0, vy: 0, life: 500, color: i % 2 ? "#ffd23f" : "#ff6b3f", r: 2 + Math.random() * 3.5 });
+          }
+          Game.sparks.push({ kind: "ring", x: ix, y: iy, life: 130, life0: 260, r: 6, rMax: isSp ? 60 : 38, color: "#fff3c4" });
+          if (isSp) { Game.flashScreen = 0.5; Game.projectiles.push(new Projectile(Game.luffy, MOVES.luffy.special.proj)); Game.projectiles[0].x = ix - 30; }
+          Game.demoFreeze = true;
+        }
         Game.announce = null;
         Game.state = "paused";   // đóng băng để chụp
       }, 60);
