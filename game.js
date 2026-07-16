@@ -603,6 +603,12 @@
       ctx.translate(s.x, s.y);
       ctx.scale(s.facing, 1);   // lật theo hướng
 
+      // nghiêng người tới trước cho dáng sẵn sàng chiến đấu (xoay quanh bàn chân)
+      if (s.onGround && s.state !== "ko") {
+        const lean = s.state === "attack" ? 0.03 : 0.055;
+        ctx.rotate(lean);
+      }
+
       // nhấp nháy đỏ khi trúng đòn
       const flashing = s.flash > 0 && Math.floor(s.flash/40) % 2 === 0;
 
@@ -638,7 +644,7 @@
         return { a:p*0.6, b:-p*0.6 };
       }
       if (this.state === "block") return { a:0.35, b:-0.35 };
-      return { a:-0.18, b:0.2 };   // thế tấn hơi dạng, bám đất vững
+      return { a:-0.26, b:0.28 };   // thế tấn dạng chân, khuỵu gối, bám đất vững
     }
 
     // ---- Helper dùng chung: hai chân + giày ----

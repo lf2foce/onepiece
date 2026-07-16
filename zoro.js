@@ -395,7 +395,7 @@
     Fighter.prototype.drawFrontArmZoro = function(swing, skin, skinSh, flash) {
       const ctx = document.getElementById("game").getContext("2d");
       const attacking = this.state === "attack" && this.attack;
-      const ang = attacking ? (-1.2 + swing * 2.0) : -0.42;
+      const ang = attacking ? (-1.2 + swing * 2.0) : -0.24;
       const y = -86;
       ctx.save();
       ctx.translate(11, -93);

@@ -467,7 +467,7 @@
       }
 
       const isMelee = attacking && this.attack.def.type === "melee";
-      const reach = isMelee ? 20 + swing * 52 : (attacking ? 24 + swing * 10 : 8);
+      const reach = isMelee ? 20 + swing * 52 : (attacking ? 24 + swing * 10 : 19);
       ctx.lineCap = "round"; ctx.lineJoin = "round";
       // vệt tốc độ khi đấm cao su
       if (isMelee && this.attack.phase !== "startup") {
