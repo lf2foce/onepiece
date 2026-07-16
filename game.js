@@ -642,6 +642,16 @@
       const d = this.attack.def;
       if (d.type !== "melee") return null;
       if (this.attack.phase !== "active") return null;
+      // King Kong Gun: hitbox ĐỘNG bám theo nắm đấm vươn xa (trùng công thức vẽ)
+      if (d.key === "king") {
+        const sw = Math.max(0, this.armSwing());
+        const reach = 40 + sw * 660;
+        const R = 66 + sw * 58;
+        const near = 6, far = reach + R * 0.55;
+        const h = R * 1.9;
+        const x = this.facing > 0 ? this.x + near : this.x - far;
+        return { x, y: (this.y - 78) - h / 2, w: far - near, h };
+      }
       const r = d.reach;
       const x = this.facing > 0 ? this.x + r.dx : this.x - r.dx - r.w;
       const y = this.y + r.dy;
