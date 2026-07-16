@@ -19,10 +19,14 @@
         sfx:"punch",
         multiProj: { count: 5, interval: 58, dmg: 3, speed: 690 },
         proj:{ kind:"fire_kick", speed:690, w:52, h:34, dmg:3, knockback:120, launch:-25, life:1000, color:"#ff7f00" } },
-      // 3. ↓+skill (miễn phí): gót lửa bổ từ trên xuống
-      concasse: { key:"concasse", name:"Concassé — Gót Lửa", type:"melee",
-        dmg:16, startup:230, active:170, recovery:250, meterGain:14,
-        reach:{dx:14,dy:-210,w:150,h:225}, knockback:340, launch:150,
+      // 3. ↓+cận (miễn phí): xoay tròn như chong chóng, vừa xoay vừa lao tới giã liên tục
+      partytable: { key:"partytable", name:"Party Table Kick Course — Đá Xoay", type:"melee",
+        dmg:6, startup:150, active:430, recovery:280, meterGain:5,
+        dash: 720,          // vừa xoay vừa lao thẳng tới trước
+        multiHit: 110,      // xoay tới đâu giã tới đó (~4 nhịp trong pha ra đòn)
+        // Vùng đánh bao QUANH người (dx âm) vì đang xoay tròn: xoay lao vượt qua đối thủ
+        // thì phía sau vẫn phải trúng. Lực đẩy nhẹ để giã được nhiều nhịp.
+        reach:{dx:-58,dy:-112,w:116,h:112}, knockback:80, launch:-22,
         sfx:"punch", color:"#ff6b2b" },
       // 4. SIÊU CHIÊU 1: chân bốc lửa ĐỎ rồi LAO THẲNG tới đối phương đá
       special: { key:"special", name:"Diable Jambe: Flambage Shot", type:"melee",
@@ -76,6 +80,27 @@
 
       // ---- HIỆU ỨNG CHÂN LỬA DIABLE JAMBE (Khi nộ đầy 100% hoặc khi tung tuyệt chiêu) ----
       const atkKey = (this.state === "attack" && this.attack) ? this.attack.def.key : null;
+      const attackingNow = this.state === "attack" && this.attack;
+
+      // ---- PARTY TABLE KICK COURSE: cả người xoay tròn như chong chóng ----
+      // Xoay quanh eo, hai chân duỗi thẳng thành hình kéo -> nhìn như bánh xe lăn tới.
+      const isSpin = attackingNow && atkKey === "partytable";
+      let spinAng = 0, spinLift = 0;
+      if (isSpin) {
+        const a = this.attack, d = a.def;
+        const aEnd = d.startup + d.active;
+        if (a.elapsed < d.startup) {
+          spinAng = -0.5 * (a.elapsed / d.startup);          // ghìm người lấy đà
+        } else {
+          spinAng = (a.elapsed - d.startup) / 1000 * 19;      // ~3 vòng/giây
+          // Nhấc bổng khỏi mặt sàn: xoay như bánh xe mà vẫn dính đất thì đầu chúi lút sàn
+          spinLift = a.elapsed < aEnd
+            ? 40 * clamp((a.elapsed - d.startup) / 110, 0, 1)
+            : 40 * clamp(1 - (a.elapsed - aEnd) / d.recovery, 0, 1);
+        }
+        ctx.save();
+        ctx.translate(0, -62 - spinLift); ctx.rotate(spinAng); ctx.translate(0, 62);
+      }
       const isIfrit = atkKey === "ifrit";                       // lửa XANH (siêu chiêu 2)
       const isDiable = this.meter >= 100 || atkKey === "special" || isIfrit;
       if (isDiable) {
@@ -105,14 +130,24 @@
       ctx.stroke();
 
       // ĐÔI CHÂN TÂY ĐEN DÀI THON GỌN (Lãng tử tỷ lệ chân dài miên man)
-      // Chân sau (Trái)
+      // Chân sau (Trái) — lúc xoay thì duỗi thẳng ngược ra sau cho thành hình kéo
       const kneeL = -6 + Math.sin(legs.a) * 16;
       const footL = kneeL + Math.sin(legs.a) * 8 + 4;
-      ctx.strokeStyle = "#0f1013"; ctx.lineWidth = 14;
-      ctx.beginPath(); ctx.moveTo(-6, -52); ctx.lineTo(kneeL, -28); ctx.stroke();
-      ctx.strokeStyle = "#0f1013"; ctx.lineWidth = 11;
-      ctx.beginPath(); ctx.moveTo(kneeL, -27); ctx.lineTo(footL, -10); ctx.stroke();
-      ctx.fillStyle = "#1e1f26"; roundRect(ctx, footL - 7, -11, 22, 9, 4); ctx.fill();
+      if (isSpin) {
+        ctx.strokeStyle = "#0f1013"; ctx.lineWidth = 14;
+        ctx.beginPath(); ctx.moveTo(-4, -56); ctx.lineTo(-30, -60); ctx.stroke();
+        ctx.strokeStyle = "#0f1013"; ctx.lineWidth = 11;
+        ctx.beginPath(); ctx.moveTo(-30, -60); ctx.lineTo(-58, -64); ctx.stroke();
+        ctx.save(); ctx.translate(-58, -64); ctx.rotate(Math.PI);
+        ctx.fillStyle = "#1e1f26"; roundRect(ctx, -5, -5, 23, 10, 4); ctx.fill();
+        ctx.restore();
+      } else {
+        ctx.strokeStyle = "#0f1013"; ctx.lineWidth = 14;
+        ctx.beginPath(); ctx.moveTo(-6, -52); ctx.lineTo(kneeL, -28); ctx.stroke();
+        ctx.strokeStyle = "#0f1013"; ctx.lineWidth = 11;
+        ctx.beginPath(); ctx.moveTo(kneeL, -27); ctx.lineTo(footL, -10); ctx.stroke();
+        ctx.fillStyle = "#1e1f26"; roundRect(ctx, footL - 7, -11, 22, 9, 4); ctx.fill();
+      }
 
       // ---- LAO TỚI ĐÁ CHÂN LỬA (Diable Jambe đỏ / Ifrit Jambe xanh) ----
       const isDashKick = atkKey === "special" || atkKey === "ifrit";
@@ -182,7 +217,97 @@
         fireLegGrd.addColorStop(0, suitCol);
         fireLegGrd.addColorStop(1, "#15151c");
       }
-      if (!isDashKick) {   // khi lao đá thì đã vẽ tư thế đá riêng ở trên
+      // ---- SANJI KHÔNG BAO GIỜ ĐÁNH BẰNG TAY: mọi đòn đều tung chân ----
+      // Mỗi chiêu một quỹ đạo bàn chân riêng, bám sát đúng vùng sát thương của chiêu đó.
+      const kickPose = () => {
+        if (isDashKick || !attackingNow) return null;
+        const sw = Math.max(0, swing);
+        const a = this.attack, d = a.def;
+        if (atkKey === "close") {
+          // Collier Shoot: đá tống ngang cực nhanh
+          return { fx: 24 + sw * 56, fy: -48 - sw * 8, bend: 12, fire: isDiable, arc: sw };
+        }
+        if (atkKey === "ranged" || atkKey === "grill") {
+          // Spectre / Grill Shot: quét chân bắn lưỡi lửa, đá liên tục trong pha ra đòn
+          const rep = Math.sin(this.animTime * 26) * 0.5 + 0.5;
+          const e = a.phase === "startup" ? sw : 0.55 + rep * 0.45;
+          return { fx: 20 + e * 60, fy: -84 + Math.cos(this.animTime * 26) * 12, bend: 16, fire: true, arc: e };
+        }
+        if (atkKey === "partytable") {
+          // Party Table: chân trước duỗi thẳng căng ra trước, cả người xoay quanh nó
+          const p = a.phase === "startup" ? clamp(a.elapsed / d.startup, 0, 1) : 1;
+          return { fx: 26 + p * 36, fy: -60 - p * 4, bend: 14 - p * 16, fire: isDiable, arc: 0 };
+        }
+        return null;
+      };
+
+      // Vẽ chân đá: hông -> gối -> bàn chân, giày xoay theo đúng hướng đá
+      const drawKickLeg = (k) => {
+        const hipX = 5, hipY = -57;
+        const mx = hipX + (k.fx - hipX) * 0.55;
+        const my = hipY + (k.fy - hipY) * 0.55 - (k.bend || 12);
+
+        // Vệt quét của cú đá
+        if (k.arc > 0.15) {
+          ctx.save();
+          ctx.globalCompositeOperation = "lighter";
+          ctx.strokeStyle = isIfrit ? "rgba(90,190,255,0.35)" : (k.fire ? "rgba(255,140,20,0.35)" : "rgba(255,255,255,0.18)");
+          ctx.lineWidth = 13;
+          ctx.beginPath();
+          ctx.moveTo(hipX, hipY);
+          ctx.quadraticCurveTo(mx + 10, my + 16, k.fx - 6, k.fy + 8);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // Quầng lửa quanh bàn chân (chân lửa)
+        if (k.fire) {
+          ctx.save();
+          ctx.globalCompositeOperation = "lighter";
+          const g = ctx.createRadialGradient(k.fx, k.fy, 3, k.fx, k.fy, 30);
+          const glow = isDiable ? "rgba(255,140,20," : "rgba(255,90,20,";
+          g.addColorStop(0, `${glow}0.85)`); g.addColorStop(0.5, `${glow}0.35)`); g.addColorStop(1, `${glow}0)`);
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(k.fx, k.fy, 30, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+        }
+
+        const legGrd = ctx.createLinearGradient(hipX, hipY, k.fx, k.fy);
+        legGrd.addColorStop(0, suitCol);
+        if (k.fire && isDiable) { legGrd.addColorStop(0.5, "#ff4500"); legGrd.addColorStop(1, "#ffd700"); }
+        else if (k.fire) { legGrd.addColorStop(0.6, "#2a2a34"); legGrd.addColorStop(1, "#ff7a2b"); }
+        else legGrd.addColorStop(1, "#15151c");
+
+        ctx.strokeStyle = legGrd; ctx.lineWidth = 15;
+        ctx.beginPath(); ctx.moveTo(hipX, hipY); ctx.lineTo(mx, my); ctx.stroke();
+        ctx.lineWidth = 12;
+        ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(k.fx, k.fy); ctx.stroke();
+
+        // Giày da bóng loáng, xoay theo trục cẳng chân
+        ctx.save();
+        ctx.translate(k.fx, k.fy);
+        ctx.rotate(Math.atan2(k.fy - my, k.fx - mx));
+        ctx.fillStyle = k.fire && isDiable ? "#ffd700" : "#262830";
+        roundRect(ctx, -5, -5, 23, 10, 4); ctx.fill();
+        ctx.restore();
+
+        // Concassé nện gót xuống: bụi lửa toé lên khỏi mặt sàn
+        if (k.slam !== undefined && k.slam > 0.75) {
+          ctx.save();
+          ctx.globalCompositeOperation = "lighter";
+          ctx.fillStyle = "rgba(255,190,60,0.6)";
+          for (let i = 0; i < 5; i++) {
+            const sx = k.fx - 10 + i * 9;
+            const sy = -8 - Math.abs(Math.sin(i * 1.7 + this.animTime * 12)) * 22;
+            ctx.beginPath(); ctx.arc(sx, sy, 3.5 - i * 0.4, 0, Math.PI * 2); ctx.fill();
+          }
+          ctx.restore();
+        }
+      };
+
+      const kick = kickPose();
+      if (kick) drawKickLeg(kick);
+      else if (!isDashKick) {   // khi lao đá thì đã vẽ tư thế đá riêng ở trên
         ctx.strokeStyle = fireLegGrd; ctx.lineWidth = 14;
         ctx.beginPath(); ctx.moveTo(6, -52); ctx.lineTo(kneeR, -28); ctx.stroke();
         ctx.strokeStyle = fireLegGrd; ctx.lineWidth = 11;
@@ -209,24 +334,40 @@
       // ---- ĐẦU SANJI (Mái tóc vàng lãng tử che một bên mắt) ----
       this.drawHeadSanji(skin, skinSh, flash);
 
-      // ---- TAY TRƯỚC (Thong thả đút túi quần, hoặc vung lên khi đấm Collier) ----
-      const attacking = this.state === "attack" && this.attack;
-      const isCollier = attacking && this.attack.def.key === "close";
-      const y = -86;
-      if (isCollier) {
-        // Vung tay Collier strike cực nhanh
-        const reach = 20 + swing * 52;
-        ctx.strokeStyle = skin; ctx.lineWidth = 10;
-        ctx.beginPath(); ctx.moveTo(11, -96); ctx.lineTo(reach * 0.55, y + 1); ctx.lineTo(reach, y); ctx.stroke();
-        ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(reach, y, 8, 0, Math.PI * 2); ctx.fill();
-      } else {
-        // Bình thường đút túi quần lãng tử
-        ctx.strokeStyle = suitCol; ctx.lineWidth = 11;
-        ctx.beginPath();
-        ctx.moveTo(11, -85);
-        ctx.lineTo(17, -70);
-        ctx.lineTo(10, -56);
-        ctx.stroke();
+      // ---- TAY TRƯỚC: LUÔN ĐÚT TÚI QUẦN ----
+      // Sanji tuyệt đối không đánh bằng tay (tay là để nấu ăn) -> kể cả lúc ra đòn vẫn đút túi,
+      // chỉ hơi rung theo nhịp đá cho có lực.
+      const kickShake = kick ? Math.sin(this.animTime * 30) * 1.6 : 0;
+      ctx.strokeStyle = suitCol; ctx.lineWidth = 11;
+      ctx.beginPath();
+      ctx.moveTo(11, -85 + kickShake);
+      ctx.lineTo(17, -70 + kickShake);
+      ctx.lineTo(10, -56);
+      ctx.stroke();
+
+      // Đóng phép xoay của Party Table, rồi vẽ vòng khí xoáy (vẽ ở hệ toạ độ KHÔNG xoay
+      // để vòng xoáy đứng yên còn người quay tít bên trong)
+      if (isSpin) {
+        ctx.restore();
+        if (this.attack && this.attack.phase !== "startup") {
+          ctx.save();
+          ctx.globalCompositeOperation = "lighter";
+          const t = this.animTime * 20;
+          for (let i = 0; i < 3; i++) {
+            const r = 52 + i * 9;
+            const a0 = t * 1.4 + i * 2.1;
+            ctx.strokeStyle = isDiable ? `rgba(255,150,40,${0.4 - i * 0.1})` : `rgba(220,235,255,${0.32 - i * 0.09})`;
+            ctx.lineWidth = 6 - i * 1.4;
+            ctx.beginPath(); ctx.arc(0, -62 - spinLift, r, a0, a0 + Math.PI * 1.15); ctx.stroke();
+          }
+          // bụi cuốn dưới chân do lao tới
+          ctx.fillStyle = "rgba(255,220,170,0.45)";
+          for (let i = 0; i < 4; i++) {
+            const dx = -18 - i * 14 - (t * 3 % 20);
+            ctx.beginPath(); ctx.arc(dx, -10 - Math.sin(t + i) * 5, 3.5 - i * 0.5, 0, Math.PI * 2); ctx.fill();
+          }
+          ctx.restore();
+        }
       }
 
       ctx.restore();

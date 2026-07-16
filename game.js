@@ -14,6 +14,7 @@
   const GROUND = H - 78;    // cao độ mặt đất (chân đứng)
 
   // ---------------------------------------------------------------- Vật lý
+  const MAX_HP = 140;        // máu mỗi hiệp (sát thương chiêu giữ nguyên -> trận dài hơn, đỡ "một phát chết")
   const GRAVITY = 2200;      // px/s^2
   const MOVE_SPEED = 260;    // px/s
   const JUMP_V = -820;       // px/s
@@ -151,10 +152,12 @@
   const DOWN_MOVES = {
     luffy:  { close: "axe",      ranged: "rain",     special: "king" },
     zoro:   { close: "asura",    ranged: "pound108", special: "sanzen" },
-    sanji:  { close: "concasse", ranged: "grill",    special: "ifrit" },
+    sanji:  { close: "partytable", ranged: "grill",  special: "ifrit" },
     shanks: { close: "haoshoku", ranged: "hakoku",   special: "storm" },
     ace:    { close: "kagerou",  ranged: "hotarubi", special: "entei" },
     aokiji: { close: "icetime",  ranged: "icerain",  special: "iceage" },
+    sabo:   { close: "kagizume", ranged: "clawrain", special: "hiryuo" },
+    akainu: { close: "meigo",    ranged: "ryusei",   special: "inugami" },
   };
 
   // Danh sách tướng dùng chung cho HUD, aura và bảng chọn tướng ở sảnh chờ.
@@ -166,8 +169,10 @@
     shanks: { name: "SHANKS", emoji: "👑", aura: "#ff5a5a", warm: true,  title: "Tóc Đỏ",     desc: "Tứ Hoàng · Bá Vương" },
     ace:    { name: "ACE",    emoji: "🔥", aura: "#ff8c00", warm: true,  title: "Hỏa Quyền",  desc: "Mera Mera · Hiken" },
     aokiji: { name: "AOKIJI", emoji: "❄️", aura: "#7fdcff", warm: false, title: "Đô Đốc Băng", desc: "Hie Hie · Ice Age" },
+    sabo:   { name: "SABO",   emoji: "🎩", aura: "#ffb300", warm: true,  title: "Quân Cách Mạng", desc: "Long Trảo · Mera Mera" },
+    akainu: { name: "AKAINU", emoji: "🌋", aura: "#ff3300", warm: true,  title: "Đô Đốc Dung Nham", desc: "Magu Magu · Dai Funka" },
   };
-  const ROSTER = ["luffy", "zoro", "sanji", "shanks", "ace", "aokiji"];
+  const ROSTER = ["luffy", "zoro", "sanji", "shanks", "ace", "aokiji", "sabo", "akainu"];
   const infoOf = id => CHAR_INFO[id] || CHAR_INFO.zoro;
 
   // ================================================================ PROJECTILE
@@ -448,7 +453,7 @@
       this.vx = 0; this.vy = 0;
       this.facing = facing;         // 1 phải, -1 trái
       this.onGround = true;
-      this.hp = 100;
+      this.hp = MAX_HP;
       this.meter = 0;               // Haki 0..100
       this.state = "idle";          // idle|walk|jump|block|attack|hurt|ko
       this.attack = null;           // {def, elapsed, phase, hit:Set, spawned}
@@ -472,7 +477,7 @@
     reset(x, facing) {
       this.x = x; this.y = GROUND; this.vx = 0; this.vy = 0;
       this.facing = facing; this.onGround = true;
-      this.hp = 100; this.meter = Math.min(this.meter, 30);
+      this.hp = MAX_HP; this.meter = Math.min(this.meter, 30);
       this.state = "idle"; this.attack = null; this.hurtTimer = 0;
       this.blocking = false; this.flash = 0;
       this.combo = 0; this.comboTimer = 0; this.comboPop = 0;
@@ -522,7 +527,7 @@
           attacker.comboPop = 1;
         }
       }
-      this.hp = clamp(this.hp - real, 0, 100);
+      this.hp = clamp(this.hp - real, 0, MAX_HP);
       this.vx = kb * fromDir;
       this.flash = 140;
       Sound.hit();
@@ -961,6 +966,8 @@
       else if (s.id === "shanks" && this.drawShanks) this.drawShanks(flashing);
       else if (s.id === "ace" && this.drawAce) this.drawAce(flashing);
       else if (s.id === "aokiji" && this.drawAokiji) this.drawAokiji(flashing);
+      else if (s.id === "sabo" && this.drawSabo) this.drawSabo(flashing);
+      else if (s.id === "akainu" && this.drawAkainu) this.drawAkainu(flashing);
 
       ctx.restore();
     }
@@ -1082,6 +1089,8 @@
     if (window.ShanksInit) window.ShanksInit(Fighter, MOVES);
     if (window.AceInit) window.AceInit(Fighter, MOVES);
     if (window.AokijiInit) window.AokijiInit(Fighter, MOVES);
+    if (window.SaboInit) window.SaboInit(Fighter, MOVES);
+    if (window.AkainuInit) window.AkainuInit(Fighter, MOVES);
   }
 
   // helper vẽ chữ nhật bo góc
@@ -1105,10 +1114,6 @@
     }
     think(dt, opp) {
       const intents = { left:false,right:false,jump:false,block:false,close:false,ranged:false,special:false };
-      if (Game.mode === "sandbox") {
-        // Trong chế độ phòng thử nghiệm sandbox, Zoro máy hoàn toàn đứng yên làm bao cát
-        return intents;
-      }
       this.decideTimer -= dt * 1000;
       const f = this.f;
       const dist = opp.x - f.x;         // >0 đối thủ bên phải
@@ -1275,11 +1280,8 @@
       this.mode = mode;
       this.luffy.wins = 0; this.zoro.wins = 0;
       this.round = 1;
-      this.ai = (mode === "1p" || mode === "sandbox") ? new AI(this.zoro) : null;
-      if (mode === "sandbox") {
-        this.ai.decideTimer = 99999999; // Giúp đối thủ Zoro đứng yên để huấn luyện/thử nghiệm đòn đánh
-        this.ai.want = { left:false,right:false,jump:false,block:false,close:false,ranged:false,special:false };
-      }
+      // Phòng thử nghiệm: KHÔNG dùng máy nữa, để người chơi 2 vào chơi luôn (2 người vô hạn HP/Haki)
+      this.ai = (mode === "1p") ? new AI(this.zoro) : null;
       this.hide("menu"); this.hide("result");
       this.show("pauseHint");
       this.startRound();
@@ -1478,15 +1480,17 @@
       } else {
         this.timeLeft = 99; // Cố định 99 giây cho thoải mái thử nghiệm đòn đánh
         // Vô hạn HP & Haki cho chế độ thử nghiệm
-        this.luffy.hp = 100;
-        this.zoro.hp = 100;
+        this.luffy.hp = MAX_HP;
+        this.zoro.hp = MAX_HP;
         this.luffy.meter = 100;
         this.zoro.meter = 100;
       }
 
       // intents
       const i1 = this.humanIntents("p1");
-      const i2 = this.mode === "2p" ? this.humanIntents("p2") : this.ai.think(dt, this.luffy);
+      const i2 = (this.mode === "2p" || this.mode === "sandbox")
+        ? this.humanIntents("p2")                 // sandbox cũng là 2 người chơi thật
+        : this.ai.think(dt, this.luffy);
 
       // đẩy nhau để không chồng lên nhau
       this.separate();
@@ -1528,6 +1532,8 @@
           p.owner.gainMeter(6);
           if (this.addAceInferno && p.d.kind === "hiken") this.addAceInferno(p.x, p.y);
           if (this.addIceShatter && p.d.kind === "pheasant") this.addIceShatter(p.x, p.y);
+          if (this.addAceInferno && (p.d.kind === "dragon_fist" || p.d.kind === "fire_dragon")) this.addAceInferno(p.x, p.y);
+          if (this.addMagmaBurst && (p.d.kind === "funka" || p.d.kind === "magma_hound")) this.addMagmaBurst(p.x, p.y);
           if (p.d.super) { this.flashScreen = 1.3; this.hitstop = Math.max(this.hitstop, 150); this.addHitSpark(p.x, p.y, false, true); }
           p.dead = true;
         }
@@ -1583,6 +1589,12 @@
         }
         if (this.addIceShatter && attacker.id === "aokiji" && (d.key === "icetime" || d.key === "iceage")) {
           this.addIceShatter(defender.x, defender.y - 70);
+        }
+        if (this.addAceInferno && attacker.id === "sabo" && d.key === "kagizume") {
+          this.addAceInferno(defender.x, defender.y - 70);
+        }
+        if (this.addMagmaBurst && attacker.id === "akainu" && d.key === "meigo") {
+          this.addMagmaBurst(defender.x, defender.y - 70);
         }
 
         const dir = attacker.facing;
@@ -2021,7 +2033,7 @@
 
       // Cột máu hiện tại (Slanted) có Gradient bóng loáng cực kỳ đẹp mắt
       if (f.hp > 0) {
-        const hpW = barW * (f.hp / 100);
+        const hpW = barW * (f.hp / MAX_HP);
         const hpGrd = ctx.createLinearGradient(x, y, x + barW, y + barH);
         if (!right) {                       // P1 luôn đỏ, P2 luôn xanh — không phụ thuộc chọn tướng nào
           hpGrd.addColorStop(0, "#ffa07a"); // Light salmon
@@ -2161,6 +2173,7 @@
     window.OP_GAME = Game;
     window.OP_SOUNDS = Sound;
     window.OP_MOVES = MOVES;   // để adventure.js tra bộ chiêu theo nhân vật đã chọn
+    window.OP_MAXHP = MAX_HP;  // để adventure.js hồi máu đúng mức, không hardcode 100
     Game.Projectile = Projectile;   // expose class đạn cho các file nhân vật hook vẽ
 
     // Các file nhân vật nạp TRƯỚC game.js nên không thấy OP_GAME lúc load

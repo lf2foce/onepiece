@@ -313,7 +313,8 @@
         // Reset cả 2 người chơi Luffy (P1) và Zoro (P2)
         this.luffy.reset(150, 1);
         this.zoro.reset(220, 1);
-        this.luffy.hp = 100; this.zoro.hp = 100;
+        const maxHp = window.OP_MAXHP || 100;
+        this.luffy.hp = maxHp; this.zoro.hp = maxHp;
         this.luffy.meter = 0; this.zoro.meter = 0;
         
         // Cấu hình Z-axis chiều sâu 2.5D khởi tạo ban đầu cho cả 2 đấu sĩ
