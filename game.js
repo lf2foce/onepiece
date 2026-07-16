@@ -490,7 +490,7 @@
     reset(x, facing) {
       this.x = x; this.y = GROUND; this.vx = 0; this.vy = 0;
       this.facing = facing; this.onGround = true;
-      this.hp = MAX_HP; this.meter = Math.min(this.meter, 30); this.formT = 0;
+      this.hp = MAX_HP; this.meter = Math.min(this.meter, 30); this.formT = 0; this._scripted = false;
       this.state = "idle"; this.attack = null; this.hurtTimer = 0;
       this.blocking = false; this.flash = 0;
       this.combo = 0; this.comboTimer = 0; this.comboPop = 0;
@@ -534,6 +534,11 @@
       } else {
         this.state = "hurt";
         this.hurtTimer = stun;
+        // Huỷ hẳn đòn đang tung dở: nếu chỉ đổi state mà để attack lại thì tiến trình đòn ngừng
+        // chạy giữa chừng, cờ _scripted (tắt trọng lực cho Sky Walk) không bao giờ được xoá
+        // -> nhân vật mất trọng lực vĩnh viễn, nhảy là bay mất, trúng đòn trên không là kẹt "hurt".
+        this.attack = null;
+        this._scripted = false;
         this.vy = launch;
         this.onGround = launch < 0 ? false : this.onGround;
         this.gainMeter(dmg * 0.6);
@@ -870,6 +875,7 @@
       }
 
       // ------ vật lý ------
+      if (this.state !== "attack") this._scripted = false;   // chốt chặn: cờ không bao giờ sống lâu hơn đòn
       if (!this.onGround && !this._scripted) {   // đòn tự lo quỹ đạo (Sky Walk) thì không rơi theo trọng lực
         this.vy += GRAVITY * dt;
       }
