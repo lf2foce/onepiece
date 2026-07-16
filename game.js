@@ -447,8 +447,7 @@
       this.state = "attack";
       this.attack = { def, elapsed:0, phase:"startup", hit:new Set(), spawned:false, isSuper };
       this.vx *= 0.2;
-      if (def.cry) Voice.say(def.cry);        // hô tên chiêu (anime style)
-      if (isSuper) Game.triggerSuper(this);
+      if (isSuper) Game.triggerSuper(this);   // triggerSuper sẽ hô tên chiêu (khi khựng hình)
     }
 
     takeHit(dmg, kb, launch, fromDir, isSpecial, attacker) {
@@ -989,7 +988,7 @@
     hitstop: 0,          // ms đóng băng khi trúng đòn
     flashScreen: 0,      // 0..1 chớp trắng cho tuyệt chiêu
     superFreeze: 0,      // ms khựng điện ảnh khi tung super (full Haki)
-    superDur: 640,
+    superDur: 820,       // đủ để hô xong tên chiêu trước khi tung đòn
     superFocus: null,    // {x, y, id, name}
     announce: null,      // {text, t}
     lastPressAttack: { p1:{}, p2:{} },
@@ -1043,9 +1042,11 @@
     // Kích hoạt SUPER: khựng hình điện ảnh + luồng sáng hội tụ (Street Fighter style)
     triggerSuper(fighter) {
       this.superFreeze = this.superDur;
-      const name = (fighter.attack && fighter.attack.def) ? fighter.attack.def.name : fighter.moves.special.name;
+      const def = fighter.attack && fighter.attack.def;
+      const name = def ? def.name : fighter.moves.special.name;
       this.superFocus = { x: fighter.x, y: fighter.y, id: fighter.id, name };
       Sound.superFlash();
+      Voice.say(def && def.cry ? def.cry : name);   // HÔ tên chiêu ngay lúc khựng, trước khi ra đòn
     },
 
     toMenu() {

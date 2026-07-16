@@ -27,7 +27,7 @@
       // SIÊU CHIÊU 2 (↓+skill khi full Haki) — đĩa kiếm khí xoay bay
       sanzen: { key:"sanzen", name:"Santoryu Ougi: Sanzen Sekai", type:"projectile",
         dmg:22, startup:300, active:0, recovery:440, meterCost:100, meterGain:0,
-        sfx:"slash", cry:"Santoryu Ougi! Sanzen Sekai!",
+        sfx:"slash", cry:"Sanzen Sekai!",
         proj:{ kind:"sanzen", speed:540, w:96, h:150, dmg:22, knockback:540, launch:-160, life:2600, color:"#8fffbf" } },
     };
 

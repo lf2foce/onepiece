@@ -23,13 +23,13 @@
         sfx:"punch", color:"#ff9a6b" },
       special: { key:"special", name:"Red Hawk", type:"projectile",
         dmg:22, startup:230, active:0, recovery:430, meterCost:50, meterGain:0,
-        sfx:"special", cry:"Gomu Gomu no... Red Hawk!",
+        sfx:"special", cry:"Red Hawk!",
         proj:{ kind:"redhawk", speed:640, w:66, h:44, dmg:22, knockback:520, launch:-180, life:2200, color:"#ff5a2b" } },
       // SIÊU CHIÊU 2 (↓+skill khi full Haki) — Gear 3 nắm đấm khổng lồ
       king: { key:"king", name:"Gomu Gomu no King Kong Gun", type:"melee",
         dmg:20, startup:320, active:220, recovery:440, meterCost:100, meterGain:0,
         reach:{dx:18,dy:-190,w:430,h:250}, knockback:640, launch:-150,
-        sfx:"punch", color:"#ff6b6b", cry:"Gear Third! King Kong Gun!" },
+        sfx:"punch", color:"#ff6b6b", cry:"King Kong Gun!" },
     };
 
     // ---------------------------------------------------------------- Leg Swing Math for Axe Kick
