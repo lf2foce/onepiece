@@ -28,7 +28,7 @@
       // SIÊU CHIÊU 2 (↓+skill khi full Haki) — Gear 3 nắm đấm khổng lồ
       king: { key:"king", name:"Gomu Gomu no King Kong Gun", type:"melee",
         dmg:20, startup:320, active:220, recovery:440, meterCost:100, meterGain:0,
-        reach:{dx:18,dy:-150,w:330,h:190}, knockback:600, launch:-150,
+        reach:{dx:18,dy:-190,w:430,h:250}, knockback:640, launch:-150,
         sfx:"punch", color:"#ff6b6b" },
     };
 
@@ -449,44 +449,60 @@
 
       // ===== SIÊU CHIÊU 2: GEAR 3 — GOMU GOMU NO KING KONG GUN (nắm đấm khổng lồ) =====
       if (attacking && this.attack.def.key === "king") {
-        const reach = 34 + Math.max(0, swing) * 320;   // đấm khổng lồ PHÓNG CỰC XA
-        const fistR = 42 + Math.max(0, swing) * 22;    // phồng to dần
-        const fy = -80;                                // ngang ngực -> không che mặt
+        const reach = 40 + Math.max(0, swing) * 660;   // DÀI GẤP ĐÔI - phóng cực xa
+        const R = 66 + Math.max(0, swing) * 58;         // TO GẤP ĐÔI
+        const fy = -78;
+        const bw = R * 1.9, bh = R * 1.7;               // khối bàn tay hơi vuông
         ctx.save();
         ctx.lineCap = "round"; ctx.lineJoin = "round";
         // vệt tốc độ khi nện
-        if (swing > 0.5) {
-          ctx.strokeStyle = "rgba(255,255,255,0.35)"; ctx.lineWidth = fistR * 1.6;
-          ctx.beginPath(); ctx.moveTo(20, fy); ctx.lineTo(reach - fistR * 0.5, fy); ctx.stroke();
+        if (swing > 0.45) {
+          ctx.strokeStyle = "rgba(255,255,255,0.3)"; ctx.lineWidth = R * 1.3;
+          ctx.beginPath(); ctx.moveTo(20, fy); ctx.lineTo(reach - R * 0.5, fy); ctx.stroke();
         }
-        // cánh tay khổng lồ phồng (da) + viền
-        ctx.strokeStyle = "#b07c50"; ctx.lineWidth = fistR * 0.9;
-        ctx.beginPath(); ctx.moveTo(8, -84); ctx.lineTo(reach - fistR * 0.5, fy); ctx.stroke();
-        ctx.strokeStyle = skin; ctx.lineWidth = fistR * 0.76;
-        ctx.beginPath(); ctx.moveTo(8, -84); ctx.lineTo(reach - fistR * 0.5, fy); ctx.stroke();
+        // cánh tay cao su khổng lồ (viền + da)
+        ctx.strokeStyle = "#9c6a43"; ctx.lineWidth = R * 0.84;
+        ctx.beginPath(); ctx.moveTo(8, -84); ctx.lineTo(reach - R * 0.6, fy); ctx.stroke();
+        ctx.strokeStyle = skin; ctx.lineWidth = R * 0.7;
+        ctx.beginPath(); ctx.moveTo(8, -84); ctx.lineTo(reach - R * 0.6, fy); ctx.stroke();
         // ống tay áo đỏ ở gốc
-        ctx.strokeStyle = "#c92a1c"; ctx.lineWidth = fistR * 0.8;
-        ctx.beginPath(); ctx.moveTo(3, -84); ctx.lineTo(16, -82); ctx.stroke();
-        // NẮM ĐẤM khổng lồ
-        const fg = ctx.createRadialGradient(reach - 8, fy - 10, 6, reach, fy, fistR);
+        ctx.strokeStyle = "#c92a1c"; ctx.lineWidth = R * 0.74;
+        ctx.beginPath(); ctx.moveTo(3, -84); ctx.lineTo(18, -82); ctx.stroke();
+
+        // ===== NẮM ĐẤM (khối bàn tay nắm chặt) =====
+        const fx = reach;
+        ctx.fillStyle = "#9c6a43";                                  // viền khối
+        roundRect(ctx, fx - bw * 0.5 - 3, fy - bh / 2 - 3, bw + 6, bh + 6, R * 0.55); ctx.fill();
+        const fg = ctx.createRadialGradient(fx - R * 0.3, fy - R * 0.4, 10, fx, fy, R * 1.25);
         fg.addColorStop(0, "#ffe6cf"); fg.addColorStop(0.6, skin); fg.addColorStop(1, "#c98a5c");
-        ctx.fillStyle = "#a5734a";
-        ctx.beginPath(); ctx.arc(reach, fy, fistR + 3, 0, Math.PI * 2); ctx.fill();  // viền
-        ctx.fillStyle = fg;
-        ctx.beginPath(); ctx.arc(reach, fy, fistR, 0, Math.PI * 2); ctx.fill();
-        // đốt ngón (4 khớp)
-        ctx.strokeStyle = "rgba(150,95,58,0.5)"; ctx.lineWidth = 2.5;
-        for (let i = -1; i <= 2; i++) {
-          ctx.beginPath();
-          ctx.arc(reach + fistR * 0.55, fy - fistR * 0.5 + (i + 1) * fistR * 0.33, fistR * 0.18, -0.9, 0.9);
-          ctx.stroke();
-        }
-        // ngón cái
+        ctx.fillStyle = fg;                                         // thân bàn tay
+        roundRect(ctx, fx - bw * 0.5, fy - bh / 2, bw, bh, R * 0.5); ctx.fill();
+
+        // 4 khớp đốt ngón nhô ra ở mặt trước (phải)
         ctx.fillStyle = skin;
-        ctx.beginPath(); ctx.arc(reach - fistR * 0.5, fy + fistR * 0.55, fistR * 0.28, 0, Math.PI * 2); ctx.fill();
+        for (let i = 0; i < 4; i++) {
+          const ky = fy - bh * 0.34 + i * (bh * 0.225);
+          ctx.beginPath(); ctx.arc(fx + bw * 0.42, ky, R * 0.3, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.strokeStyle = "rgba(150,95,58,0.45)"; ctx.lineWidth = 2.4;
+        for (let i = 0; i < 4; i++) {
+          const ky = fy - bh * 0.34 + i * (bh * 0.225);
+          ctx.beginPath(); ctx.arc(fx + bw * 0.42, ky, R * 0.3, -1.1, 1.1); ctx.stroke();
+        }
+        // rãnh chia ngón trên mặt trước
+        ctx.strokeStyle = "rgba(150,95,58,0.4)"; ctx.lineWidth = 2.6;
+        for (let i = 0; i < 3; i++) {
+          const gy = fy - bh * 0.225 + i * (bh * 0.225);
+          ctx.beginPath(); ctx.moveTo(fx + bw * 0.1, gy); ctx.lineTo(fx + bw * 0.42, gy); ctx.stroke();
+        }
+        // ngón cái quặp ngang dưới-trước
+        ctx.fillStyle = skin;
+        ctx.beginPath(); ctx.ellipse(fx + bw * 0.02, fy + bh * 0.4, R * 0.52, R * 0.3, -0.2, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "rgba(150,95,58,0.4)"; ctx.lineWidth = 2.2;
+        ctx.beginPath(); ctx.ellipse(fx + bw * 0.02, fy + bh * 0.4, R * 0.52, R * 0.3, -0.2, 0, Math.PI * 2); ctx.stroke();
         // ánh sáng
-        ctx.fillStyle = "rgba(255,240,220,0.6)";
-        ctx.beginPath(); ctx.arc(reach - fistR * 0.35, fy - fistR * 0.4, fistR * 0.22, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "rgba(255,242,224,0.5)";
+        ctx.beginPath(); ctx.ellipse(fx - R * 0.35, fy - R * 0.42, R * 0.32, R * 0.22, -0.3, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
         return;
       }
