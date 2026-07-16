@@ -269,8 +269,8 @@
       this.animTime = 0;
       this.walkPhase = 0;
       this.flash = 0;               // nhấp nháy khi trúng đòn
-      this.width = 60;
-      this.height = 118;
+      this.width = 62;
+      this.height = 135;
       this.wins = 0;
       this.combo = 0;               // số đòn liên hoàn ĐÃ đánh trúng
       this.comboTimer = 0;          // hết giờ -> reset combo
@@ -1276,46 +1276,176 @@
     },
 
     drawBar(f, edgeX, right) {
-      const barW = 360, barH = 22;
-      const x = right ? edgeX - barW : edgeX;
-      const y = 22;
-      // khung
-      ctx.fillStyle = "rgba(0,0,0,.55)";
-      roundRect(x-4, y-4, barW+8, barH+8, 6); ctx.fill();
-      // nền
-      ctx.fillStyle = "#3a1414";
-      roundRect(x, y, barW, barH, 4); ctx.fill();
-      // máu
-      const hpW = barW * (f.hp/100);
-      const grd = ctx.createLinearGradient(x, 0, x+barW, 0);
-      if (f.id === "luffy") { grd.addColorStop(0,"#ff9a3f"); grd.addColorStop(1,"#ff3b3b"); }
-      else { grd.addColorStop(0,"#8fffbf"); grd.addColorStop(1,"#2ea15a"); }
-      ctx.fillStyle = grd;
-      const hx = right ? x + barW - hpW : x;
-      roundRect(hx, y, hpW, barH, 4); ctx.fill();
+      const cx = right ? W - 56 : 56;
+      const cy = 42;
+      const radius = 32;
 
-      // haki
-      const mY = y + barH + 5, mH = 8;
-      ctx.fillStyle = "rgba(0,0,0,.5)";
-      roundRect(x, mY, barW, mH, 3); ctx.fill();
-      const mW = barW * (f.meter/100);
-      const mx = right ? x + barW - mW : x;
-      ctx.fillStyle = f.meter >= 50 ? "#ffe14d" : "#b9962e";
-      roundRect(mx, mY, mW, mH, 3); ctx.fill();
-      if (f.meter >= 50) {
-        ctx.fillStyle = "rgba(255,255,255,.85)";
-        ctx.font = "bold 9px Trebuchet MS"; ctx.textBaseline = "middle";
-        ctx.textAlign = right ? "right" : "left";
-        ctx.fillText("HAKI SẴN SÀNG!", right ? x+barW : x, mY+mH+8);
+      // 1. Vẽ khung Avatar tròn kiểu One Piece Fighting Path (viền kim loại vàng/bạc dập nổi)
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.55)";
+      ctx.shadowBlur = 8;
+      
+      // Viền dập nổi bằng gradient vàng/bạc sang trọng
+      const borderGrd = ctx.createLinearGradient(cx - radius, cy - radius, cx + radius, cy + radius);
+      if (f.id === "luffy") {
+        borderGrd.addColorStop(0, "#ffd700");
+        borderGrd.addColorStop(0.5, "#ff8c00");
+        borderGrd.addColorStop(1, "#b8860b");
+      } else {
+        borderGrd.addColorStop(0, "#e6e6fa");
+        borderGrd.addColorStop(0.5, "#708090");
+        borderGrd.addColorStop(1, "#2f4f4f");
+      }
+      ctx.strokeStyle = borderGrd;
+      ctx.lineWidth = 4;
+      ctx.fillStyle = "#151522";
+      ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+
+      // Vẽ hình đại diện (Avatar) biểu tượng
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 28px Trebuchet MS, sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(f.id === "luffy" ? "👒" : "⚔️", cx, cy);
+
+      // Nhãn cấp độ (Lv. 100) kiểu Fighting Path RPG
+      const lvX = right ? cx - 22 : cx + 22;
+      const lvY = cy + 22;
+      ctx.fillStyle = "#ffd700";
+      ctx.strokeStyle = "#151522"; ctx.lineWidth = 3;
+      ctx.font = "900 11px Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.strokeText("Lv.100", lvX, lvY); ctx.fillText("Lv.100", lvX, lvY);
+
+      // 2. Vẽ Tên Nhân Vật và Khung Slanted (Parallelogram) Máu + Haki
+      const barW = 280, barH = 16;
+      const slant = right ? 8 : -8; // Nghiêng góc hiện đại
+      const x = right ? W - 100 - barW : 100;
+      const y = 20;
+
+      // Vẽ tên nhân vật bóng đổ tinh xảo
+      ctx.fillStyle = "#fff";
+      ctx.font = "italic 900 18px Trebuchet MS, sans-serif";
+      ctx.textBaseline = "bottom";
+      ctx.textAlign = right ? "right" : "left";
+      const nameX = right ? W - 105 : 105;
+      ctx.strokeStyle = "rgba(0,0,0,0.5)"; ctx.lineWidth = 4;
+      const nameStr = f.id === "luffy" ? "LUFFY" : "ZORO";
+      ctx.strokeText(nameStr, nameX, y - 4);
+      ctx.fillText(nameStr, nameX, y - 4);
+
+      // Khung nền đen mờ cho cột máu (bao quanh ngoài)
+      ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.15)"; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x + slant - 3, y - 2);
+      ctx.lineTo(x + barW + slant + 3, y - 2);
+      ctx.lineTo(x + barW + 3, y + barH + 2);
+      ctx.lineTo(x - 3, y + barH + 2);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+
+      // Nền cột máu trống màu đỏ sậm
+      ctx.fillStyle = "#3a1414";
+      ctx.beginPath();
+      ctx.moveTo(x + slant, y);
+      ctx.lineTo(x + barW + slant, y);
+      ctx.lineTo(x + barW, y + barH);
+      ctx.lineTo(x, y + barH);
+      ctx.closePath(); ctx.fill();
+
+      // Cột máu hiện tại (Slanted) có Gradient bóng loáng cực kỳ đẹp mắt
+      if (f.hp > 0) {
+        const hpW = barW * (f.hp / 100);
+        const hpGrd = ctx.createLinearGradient(x, y, x + barW, y + barH);
+        if (f.id === "luffy") {
+          hpGrd.addColorStop(0, "#ffa07a"); // Light salmon
+          hpGrd.addColorStop(0.3, "#ff4500"); // Orange-red
+          hpGrd.addColorStop(1, "#b22222"); // Firebrick shadow
+        } else {
+          hpGrd.addColorStop(0, "#adff2f"); // Green-yellow glow
+          hpGrd.addColorStop(0.3, "#32cd32"); // Lime-green
+          hpGrd.addColorStop(1, "#006400"); // Dark green shadow
+        }
+        ctx.fillStyle = hpGrd;
+        
+        // Vẽ cột máu lấp đầy
+        ctx.beginPath();
+        const startX = right ? x + barW - hpW : x;
+        const endX = startX + hpW;
+        const sSlant = right ? (barW - hpW) / barW * slant : 0;
+        const eSlant = right ? slant : hpW / barW * slant;
+        
+        ctx.moveTo(startX + sSlant, y);
+        ctx.lineTo(endX + eSlant, y);
+        ctx.lineTo(endX, y + barH);
+        ctx.lineTo(startX, y + barH);
+        ctx.closePath(); ctx.fill();
+        
+        // Vẽ vệt sáng phản chiếu (shimmer) trên đầu thanh máu
+        ctx.fillStyle = "rgba(255,255,255,0.18)";
+        ctx.beginPath();
+        ctx.moveTo(startX + sSlant, y);
+        ctx.lineTo(endX + eSlant, y);
+        ctx.lineTo(endX - (endX-startX)*0.1, y + barH*0.4);
+        ctx.lineTo(startX + (endX-startX)*0.1, y + barH*0.4);
+        ctx.closePath(); ctx.fill();
       }
 
-      // tên
-      ctx.fillStyle = "#fff";
-      ctx.font = "bold 18px Trebuchet MS";
-      ctx.textBaseline = "alphabetic";
-      ctx.textAlign = right ? "right" : "left";
-      const label = f.id === "luffy" ? "👒 LUFFY" : "ZORO ⚔️";
-      ctx.fillText(label, right ? edgeX : x, y - 8);
+      // 3. Thanh Năng lượng HAKI Slanted dẹt hơn bên dưới
+      const mY = y + barH + 4;
+      const mH = 6;
+      const mSlant = right ? 6 : -6;
+
+      // Khung nền Haki đen mờ
+      ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+      ctx.beginPath();
+      ctx.moveTo(x + mSlant - 2, mY - 1);
+      ctx.lineTo(x + barW + mSlant + 2, mY - 1);
+      ctx.lineTo(x + barW + 2, mY + mH + 1);
+      ctx.lineTo(x - 2, mY + mH + 1);
+      ctx.closePath(); ctx.fill();
+
+      // Nền trống Haki
+      ctx.fillStyle = "#1e1e12";
+      ctx.beginPath();
+      ctx.moveTo(x + mSlant, mY);
+      ctx.lineTo(x + barW + mSlant, mY);
+      ctx.lineTo(x + barW, mY + mH);
+      ctx.lineTo(x, mY + mH);
+      ctx.closePath(); ctx.fill();
+
+      // Haki lấp đầy
+      if (f.meter > 0) {
+        const mW = barW * (f.meter / 100);
+        const mGrd = ctx.createLinearGradient(x, mY, x + barW, mY + mH);
+        mGrd.addColorStop(0, "#ffeb3b");
+        mGrd.addColorStop(0.5, "#ffc107");
+        mGrd.addColorStop(1, "#ff9800");
+        ctx.fillStyle = f.meter >= 50 ? mGrd : "#b9962e";
+
+        const startMX = right ? x + barW - mW : x;
+        const endMX = startMX + mW;
+        const sMSlant = right ? (barW - mW) / barW * mSlant : 0;
+        const eMSlant = right ? mSlant : mW / barW * mSlant;
+
+        ctx.beginPath();
+        ctx.moveTo(startMX + sMSlant, mY);
+        ctx.lineTo(endMX + eMSlant, mY);
+        ctx.lineTo(endMX, mY + mH);
+        ctx.lineTo(startMX, mY + mH);
+        ctx.closePath(); ctx.fill();
+      }
+
+      // Nhãn HAKI SẴN SÀNG nhấp nháy phát sáng nếu đầy 50%
+      if (f.meter >= 50) {
+        ctx.fillStyle = "#ffe14d";
+        ctx.font = "bold 9px Arial, sans-serif";
+        ctx.textBaseline = "top";
+        ctx.textAlign = right ? "right" : "left";
+        const labelX = right ? x + barW - 10 : x + 10;
+        ctx.fillText("HAKI READY!", labelX, mY + mH + 3);
+      }
     },
 
     drawWinPips(f, x, y, right) {
