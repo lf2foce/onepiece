@@ -1494,13 +1494,14 @@
     const params = new URLSearchParams(location.search);
     if (params.get("auto")) {
       Game.startMatch(params.get("mode") || "2p");
+      const poseFrac = params.get("pe") ? +params.get("pe") : 0.42;
       const poseFighter = (f, moveKey) => {
         if (moveKey === "none") return;
         f.startAttack(moveKey);
         if (f.attack) {
           const d = f.attack.def;
           const total = d.startup + d.active + d.recovery;
-          f.attack.elapsed = total * 0.42;
+          f.attack.elapsed = total * poseFrac;
           f.attack.phase = "active";
         }
       };

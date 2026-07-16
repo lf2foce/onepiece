@@ -388,6 +388,46 @@
       ctx.strokeStyle = "#b5493a"; ctx.lineWidth = 1.8;
       ctx.beginPath(); ctx.moveTo(5, -128); ctx.lineTo(5, -115); ctx.stroke();
 
+      // ---- KATANA NGẬM MIỆNG khi tung ASHURA (Tam Đao Lưu) ----
+      if (isAsura) {
+        ctx.save();
+        ctx.lineCap = "round"; ctx.lineJoin = "round";
+        // hàm nghiến chặt cắn kiếm
+        ctx.strokeStyle = "#4a1414"; ctx.lineWidth = 2.6;
+        ctx.beginPath(); ctx.moveTo(1, -112); ctx.lineTo(9, -112); ctx.stroke();
+        ctx.fillStyle = "#f4f4f4";
+        roundRect(ctx, 2, -113.4, 6.5, 2, 0.8); ctx.fill();
+
+        // chuôi kiếm trắng (Wado) kéo về sau
+        ctx.strokeStyle = "#eef0f0"; ctx.lineWidth = 4.6;
+        ctx.beginPath(); ctx.moveTo(4, -111.5); ctx.lineTo(-17, -108); ctx.stroke();
+        ctx.strokeStyle = "rgba(0,0,0,0.28)"; ctx.lineWidth = 1;
+        for (let i = 1; i <= 4; i++) {
+          const t = i / 5; const hx = 4 - 21 * t, hy = -111.5 + 3.5 * t;
+          ctx.beginPath(); ctx.moveTo(hx + 1.6, hy - 1.6); ctx.lineTo(hx - 1.6, hy + 1.6); ctx.stroke();
+        }
+        // đốc chuôi
+        ctx.fillStyle = "#d9dce0";
+        ctx.beginPath(); ctx.arc(-17, -108, 2.4, 0, Math.PI * 2); ctx.fill();
+
+        // tsuba (chắn kiếm) tại miệng
+        ctx.fillStyle = "#ffd700";
+        ctx.beginPath(); ctx.arc(6, -111.6, 2.8, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "#b8860b"; ctx.lineWidth = 0.8; ctx.stroke();
+
+        // lưỡi kiếm vươn ra trước, phát sáng quỷ khí tím
+        const mbg = ctx.createLinearGradient(9, 0, 52, 0);
+        mbg.addColorStop(0, "#cfdae4"); mbg.addColorStop(0.5, "#ffffff"); mbg.addColorStop(1, "#eef4fa");
+        ctx.shadowColor = "#8e2bbf"; ctx.shadowBlur = 9;
+        ctx.strokeStyle = mbg; ctx.lineWidth = 4.6;
+        ctx.beginPath(); ctx.moveTo(9, -112); ctx.lineTo(52, -114.5); ctx.stroke();
+        ctx.shadowBlur = 0;
+        // sống kiếm
+        ctx.strokeStyle = "rgba(120,140,160,.65)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(10, -113.6); ctx.lineTo(50, -116); ctx.stroke();
+        ctx.restore();
+      }
+
       ctx.restore();
     };
 
