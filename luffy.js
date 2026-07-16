@@ -28,7 +28,7 @@
       // SIÊU CHIÊU 2 (↓+skill khi full Haki) — Gear 3 nắm đấm khổng lồ
       king: { key:"king", name:"Gomu Gomu no King Kong Gun", type:"melee",
         dmg:20, startup:320, active:220, recovery:440, meterCost:100, meterGain:0,
-        reach:{dx:18,dy:-150,w:220,h:190}, knockback:560, launch:-150,
+        reach:{dx:18,dy:-150,w:330,h:190}, knockback:600, launch:-150,
         sfx:"punch", color:"#ff6b6b" },
     };
 
@@ -449,9 +449,9 @@
 
       // ===== SIÊU CHIÊU 2: GEAR 3 — GOMU GOMU NO KING KONG GUN (nắm đấm khổng lồ) =====
       if (attacking && this.attack.def.key === "king") {
-        const reach = 26 + Math.max(0, swing) * 150;   // đấm khổng lồ vươn cực xa
-        const fistR = 40 + Math.max(0, swing) * 24;    // phồng to dần
-        const fy = -92;
+        const reach = 34 + Math.max(0, swing) * 320;   // đấm khổng lồ PHÓNG CỰC XA
+        const fistR = 42 + Math.max(0, swing) * 22;    // phồng to dần
+        const fy = -80;                                // ngang ngực -> không che mặt
         ctx.save();
         ctx.lineCap = "round"; ctx.lineJoin = "round";
         // vệt tốc độ khi nện
@@ -460,13 +460,13 @@
           ctx.beginPath(); ctx.moveTo(20, fy); ctx.lineTo(reach - fistR * 0.5, fy); ctx.stroke();
         }
         // cánh tay khổng lồ phồng (da) + viền
-        ctx.strokeStyle = "#b07c50"; ctx.lineWidth = fistR * 0.95;
-        ctx.beginPath(); ctx.moveTo(6, -94); ctx.lineTo(reach - fistR * 0.5, fy); ctx.stroke();
-        ctx.strokeStyle = skin; ctx.lineWidth = fistR * 0.8;
-        ctx.beginPath(); ctx.moveTo(6, -94); ctx.lineTo(reach - fistR * 0.5, fy); ctx.stroke();
+        ctx.strokeStyle = "#b07c50"; ctx.lineWidth = fistR * 0.9;
+        ctx.beginPath(); ctx.moveTo(8, -84); ctx.lineTo(reach - fistR * 0.5, fy); ctx.stroke();
+        ctx.strokeStyle = skin; ctx.lineWidth = fistR * 0.76;
+        ctx.beginPath(); ctx.moveTo(8, -84); ctx.lineTo(reach - fistR * 0.5, fy); ctx.stroke();
         // ống tay áo đỏ ở gốc
-        ctx.strokeStyle = "#c92a1c"; ctx.lineWidth = fistR * 0.86;
-        ctx.beginPath(); ctx.moveTo(2, -95); ctx.lineTo(16, -93); ctx.stroke();
+        ctx.strokeStyle = "#c92a1c"; ctx.lineWidth = fistR * 0.8;
+        ctx.beginPath(); ctx.moveTo(3, -84); ctx.lineTo(16, -82); ctx.stroke();
         // NẮM ĐẤM khổng lồ
         const fg = ctx.createRadialGradient(reach - 8, fy - 10, 6, reach, fy, fistR);
         fg.addColorStop(0, "#ffe6cf"); fg.addColorStop(0.6, skin); fg.addColorStop(1, "#c98a5c");

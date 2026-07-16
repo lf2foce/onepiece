@@ -100,6 +100,12 @@
     zoro: {}
   };
 
+  // Chiêu ↓+skill theo nhân vật: chưa đầy Haki -> "special"; đầy 100% -> "ult" (siêu chiêu 2)
+  const DOWN_MOVES = {
+    luffy: { special: "axe",   ult: "king" },
+    zoro:  { special: "asura", ult: "sanzen" },
+  };
+
   // ================================================================ PROJECTILE
   class Projectile {
     constructor(owner, def) {
@@ -515,25 +521,20 @@
             Sound.jump();
           }
 
-          // tấn công (edge)
-          const special2 = this.id === "luffy" ? "axe"  : "asura";   // đặc biệt thường (chưa đầy Haki)
-          const ult2     = this.id === "luffy" ? "king" : "sanzen";  // SIÊU CHIÊU 2 (đầy Haki)
-          // ↓ + skill: đầy 100% -> chiêu ulti riêng, chưa đầy -> đặc biệt thường
+          // tấn công (edge). ↓+skill: đầy Haki -> siêu chiêu 2, chưa đầy -> đặc biệt thường
+          const dm = DOWN_MOVES[this.id];
           const downSkill = () => {
-            this.startAttack(this.meter >= 100 ? ult2 : special2);
+            this.startAttack(this.meter >= 100 ? dm.ult : dm.special);
             if (this.state === "attack") Sound.special();
           };
-          if (intents.close)   { this.startAttack("close");   Sound[this.moves.close.sfx](); }
+          if (intents.close) { this.startAttack("close"); Sound[this.moves.close.sfx](); }
           else if (intents.special) {
-            if (intents.block) downSkill();          // ↓ + tuyệt chiêu -> chiêu 2
-            else this.startAttack("special");        // tuyệt chiêu -> chiêu 1
+            if (intents.block) downSkill();                              // ↓ + tuyệt chiêu -> chiêu 2
+            else this.startAttack("special");                           // tuyệt chiêu -> chiêu 1
           }
           else if (intents.ranged) {
-            if (intents.block) downSkill();          // ↓ + skill xa -> chiêu 2 (tương thích)
-            else {
-              this.startAttack("ranged");
-              if (this.state === "attack") Sound[this.moves.ranged.sfx]();
-            }
+            if (intents.block) downSkill();                              // ↓ + skill xa (tương thích)
+            else { this.startAttack("ranged"); if (this.state === "attack") Sound[this.moves.ranged.sfx](); }
           }
         }
       }
