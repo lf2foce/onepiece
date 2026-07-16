@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ONE PIECE — Luffy vs Zoro | Đối Kháng 2D</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="stage">
+    <canvas id="game" width="960" height="540"></canvas>
+
+    <!-- MÀN HÌNH MENU -->
+    <div id="menu" class="overlay">
+      <div class="menu-card">
+        <h1 class="logo">ONE&nbsp;PIECE</h1>
+        <p class="sub">Đại Chiến Băng Mũ Rơm — <b>Luffy</b> vs <b>Zoro</b></p>
+
+        <div class="fighters-preview">
+          <div class="fp fp-luffy">
+            <span class="fp-emoji">👒</span>
+            <b>LUFFY</b>
+            <small>Trái Ác Quỷ Cao Su</small>
+          </div>
+          <span class="vs">VS</span>
+          <div class="fp fp-zoro">
+            <span class="fp-emoji">⚔️</span>
+            <b>ZORO</b>
+            <small>Tam Đao Lưu</small>
+          </div>
+        </div>
+
+        <div class="mode-buttons">
+          <button class="btn" data-mode="1p">1 NGƯỜI CHƠI <small>(đấu với máy)</small></button>
+          <button class="btn" data-mode="2p">2 NGƯỜI CHƠI <small>(cùng bàn phím)</small></button>
+        </div>
+
+        <button class="btn btn-ghost" id="howtoBtn">Hướng dẫn phím ▾</button>
+
+        <div id="howto" class="howto hidden">
+          <div class="ctrl-col">
+            <h3>👒 Luffy — Người chơi 1</h3>
+            <ul>
+              <li><kbd>A</kbd> <kbd>D</kbd> Di chuyển</li>
+              <li><kbd>W</kbd> Nhảy · <kbd>S</kbd> Đỡ đòn</li>
+              <li><kbd>F</kbd> Đấm Cao Su <span class="tag near">Cận</span></li>
+              <li><kbd>G</kbd> Súng Cao Su <span class="tag far">Xa</span></li>
+              <li><kbd>H</kbd> Red Hawk <span class="tag ult">Tuyệt chiêu</span></li>
+            </ul>
+          </div>
+          <div class="ctrl-col">
+            <h3>⚔️ Zoro — Người chơi 2</h3>
+            <ul>
+              <li><kbd>←</kbd> <kbd>→</kbd> Di chuyển</li>
+              <li><kbd>↑</kbd> Nhảy · <kbd>↓</kbd> Đỡ đòn</li>
+              <li><kbd>,</kbd> Chém Tam Đao <span class="tag near">Cận</span></li>
+              <li><kbd>.</kbd> 36 Pao Phách <span class="tag far">Xa</span></li>
+              <li><kbd>/</kbd> Long Quyển Phong <span class="tag ult">Tuyệt chiêu</span></li>
+            </ul>
+          </div>
+        </div>
+        <p class="hint">Nạp thanh <b>HAKI</b> (vàng) đầy 50% để tung Tuyệt chiêu. Thắng 2 hiệp để chiến thắng!</p>
+      </div>
+    </div>
+
+    <!-- MÀN HÌNH KẾT THÚC HIỆP / TRẬN -->
+    <div id="result" class="overlay hidden">
+      <div class="result-card">
+        <h2 id="resultTitle">HIỆP KẾT THÚC</h2>
+        <p id="resultText"></p>
+        <button class="btn" id="resultBtn">TIẾP TỤC</button>
+        <button class="btn btn-ghost" id="menuBtn">Về Menu</button>
+      </div>
+    </div>
+
+    <div id="pauseHint" class="corner-hint hidden">ESC: Menu · P: Tạm dừng</div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
