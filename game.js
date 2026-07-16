@@ -561,7 +561,8 @@
         this.x += this.vx * dt;
         this.vx *= 0.9;
         if (this.y >= GROUND) { this.y = GROUND; this.vy = 0; }
-        this.x = clamp(this.x, 40, W - 40);
+        // 1v1: gói trong khung màn hình. Đi bài: trải theo bề rộng bản đồ (3200)
+      this.x = clamp(this.x, 40, (Game.mode === "adventure" && Game.stageWidth ? Game.stageWidth : W) - 40);
         return;
       }
 
@@ -731,7 +732,8 @@
       }
       if (this.onGround && this.state !== "attack" && this.state !== "hurt") this.vx *= FRICTION;
 
-      this.x = clamp(this.x, 40, W - 40);
+      // 1v1: gói trong khung màn hình. Đi bài: trải theo bề rộng bản đồ (3200)
+      this.x = clamp(this.x, 40, (Game.mode === "adventure" && Game.stageWidth ? Game.stageWidth : W) - 40);
       this.walkPhase += Math.abs(this.vx) * dt * 0.05;
     }
 
@@ -1424,8 +1426,10 @@
         const dir = d >= 0 ? 1 : -1;
         a.x -= push * dir;
         b.x += push * dir;
-        a.x = clamp(a.x, 40, W-40);
-        b.x = clamp(b.x, 40, W-40);
+        // Đi bài: giới hạn theo bề rộng bản đồ, không phải khung 1v1
+        const maxX = (this.mode === "adventure" && this.stageWidth ? this.stageWidth : W) - 40;
+        a.x = clamp(a.x, 40, maxX);
+        b.x = clamp(b.x, 40, maxX);
       }
     },
 

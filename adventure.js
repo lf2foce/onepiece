@@ -490,9 +490,9 @@
           }
         }
 
-        // Dọn xác lính sau 2 giây ngã KO
+        // Dọn xác lính sau 2 giây ngã KO (animTime tính bằng GIÂY, không phải ms)
         this.enemies = this.enemies.filter(e => {
-          if (e.state === "ko" && e.animTime - e.koTime > 2000) return false;
+          if (e.state === "ko" && e.koTime !== undefined && e.animTime - e.koTime > 2) return false;
           if (e.state === "ko" && e.koTime === undefined) e.koTime = e.animTime;
           return true;
         });
