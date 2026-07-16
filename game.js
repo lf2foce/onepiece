@@ -219,7 +219,10 @@
       if (this.d.kind === "redhawk") Game.addTrail(this.x - this.dir * 22, this.y, "#ff7a2b", "#ffd23f");
       else if (this.d.kind === "tatsumaki") Game.addTrail(this.x - this.dir * 10, this.y + (Math.random()*80 - 40), "#39d67e", "#bfffdb");
       else if (this.d.kind === "sanzen") Game.addTrail(this.x - this.dir * 14, this.y + (Math.random()*70 - 35), "#39d67e", "#d2ffe4");
-      if (this.life <= 0 || this.x < -80 || this.x > W + 80 || this.y < -140 || this.y > H + 80) this.dead = true;
+      // Biên huỷ đạn: 1v1 gói trong màn hình; đi bài phải theo bề rộng bản đồ (3200),
+      // nếu không đạn bắn ở bàn 2/3 (x>1040) sẽ chết ngay khi vừa sinh ra -> "không ra skill"
+      const maxX = (Game.mode === "adventure" && Game.stageWidth ? Game.stageWidth : W) + 80;
+      if (this.life <= 0 || this.x < -80 || this.x > maxX || this.y < -140 || this.y > H + 80) this.dead = true;
     }
     draw() {
       const { kind, color } = this.d;
