@@ -87,6 +87,31 @@
     };
   })();
 
+  // ---------------------------------------------------------------- Giọng hô tên chiêu (Web Speech API, không cần thư viện)
+  const Voice = (() => {
+    const ok = typeof window !== "undefined" && "speechSynthesis" in window;
+    let voice = null;
+    const pick = () => {
+      if (!ok) return;
+      const vs = window.speechSynthesis.getVoices();
+      voice = vs.find(v => /^en/i.test(v.lang) && /male|daniel|alex|fred|arthur|google (uk|us)/i.test(v.name))
+           || vs.find(v => /^en/i.test(v.lang)) || vs[0] || null;
+    };
+    if (ok) { pick(); window.speechSynthesis.onvoiceschanged = pick; }
+    return {
+      say(text) {
+        if (!ok || !text) return;
+        try {
+          window.speechSynthesis.cancel();               // ngắt câu trước, không xếp hàng
+          const u = new SpeechSynthesisUtterance(text);
+          if (voice) u.voice = voice;
+          u.rate = 1.02; u.pitch = 0.85; u.volume = 1;   // trầm, dứt khoát cho ngầu
+          window.speechSynthesis.speak(u);
+        } catch (e) {}
+      },
+    };
+  })();
+
   // ---------------------------------------------------------------- Tiện ích
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const rectsOverlap = (a, b) =>
@@ -422,6 +447,7 @@
       this.state = "attack";
       this.attack = { def, elapsed:0, phase:"startup", hit:new Set(), spawned:false, isSuper };
       this.vx *= 0.2;
+      if (def.cry) Voice.say(def.cry);        // hô tên chiêu (anime style)
       if (isSuper) Game.triggerSuper(this);
     }
 
