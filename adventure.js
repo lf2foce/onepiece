@@ -378,13 +378,17 @@
           if (p.z === undefined) p.z = 0;
           const intents = p === this.luffy ? i1 : i2;
           
-          // Khi bấm nhảy (Up/W) -> Di chuyển dạt sâu vào trong màn hình
-          if (intents.jump) {
-            p.z = clamp(p.z - 130 * dt, -45, 25);
-          }
-          // Khi bấm đỡ (Down/S) -> Di chuyển dạt lùi sát ra mép ngoài màn hình
-          else if (intents.block) {
-            p.z = clamp(p.z + 130 * dt, -45, 25);
+          // Khoá làn trong lúc ra đòn: giữ ↓ vừa để chọn biến thể chiêu vừa lách làn,
+          // nếu vẫn trôi thì đang đánh sẽ tự dạt khỏi làn của lính (dung sai trúng đòn chỉ 18px) -> trượt.
+          if (p.state !== "attack") {
+            // Khi bấm nhảy (Up/W) -> Di chuyển dạt sâu vào trong màn hình
+            if (intents.jump) {
+              p.z = clamp(p.z - 130 * dt, -45, 25);
+            }
+            // Khi bấm xuống (Down/S) -> Di chuyển dạt lùi sát ra mép ngoài màn hình
+            else if (intents.block) {
+              p.z = clamp(p.z + 130 * dt, -45, 25);
+            }
           }
           
           p.y = GROUND + p.z; // Đồng bộ vị trí vẽ Y dập dềnh theo trục Z
