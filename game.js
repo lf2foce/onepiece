@@ -480,22 +480,25 @@
           }
 
           // tấn công (edge)
+          const move2 = this.id === "luffy" ? "axe" : "asura";   // chiêu đặc biệt / SIÊU CHIÊU 2
           if (intents.close)   { this.startAttack("close");   Sound[this.moves.close.sfx](); }
+          else if (intents.special) {
+            if (intents.block) {                 // ↓ + tuyệt chiêu -> chiêu 2
+              this.startAttack(move2);
+              if (this.state === "attack") Sound.special();
+            } else {                             // tuyệt chiêu -> chiêu 1
+              this.startAttack("special");
+            }
+          }
           else if (intents.ranged) {
-            if (intents.block) {
-              if (this.id === "luffy") {
-                this.startAttack("axe");
-                if (this.state === "attack") Sound.special();
-              } else if (this.id === "zoro") {
-                this.startAttack("asura");
-                if (this.state === "attack") Sound.special();
-              }
+            if (intents.block) {                 // ↓ + skill xa -> chiêu 2 (giữ tương thích)
+              this.startAttack(move2);
+              if (this.state === "attack") Sound.special();
             } else {
               this.startAttack("ranged");
               if (this.state === "attack") Sound[this.moves.ranged.sfx]();
             }
           }
-          else if (intents.special){ this.startAttack("special");}
         }
       }
 
@@ -1700,6 +1703,16 @@
         }
         if (params.get("lx")) Game.luffy.x = +params.get("lx");
         if (params.get("zx")) Game.zoro.x = +params.get("zx");
+        // TEST: chạy 1 tick với intent block+special để kiểm tra siêu chiêu 2
+        if (params.get("combotest")) {
+          const testIntent = { left:false, right:false, jump:false, block:true, close:false, ranged:false, special:true };
+          Game.zoro.meter = 100; Game.zoro.state = "idle"; Game.zoro.attack = null; Game.superFreeze = 0;
+          Game.zoro.update(0.016, Game.luffy, testIntent);
+          const mk = Game.zoro.attack && Game.zoro.attack.def.key;
+          const su = Game.zoro.attack && Game.zoro.attack.isSuper;
+          Game.announce = { text: `move=${mk}  super=${su}  freeze=${Math.round(Game.superFreeze)}`, sub: "↓+SPECIAL TEST", t: 999999 };
+          Game.demoFreeze = true;
+        }
         // dựng cảnh SUPER (full Haki) để chụp màn khựng điện ảnh
         const sup = params.get("sup");
         if (sup && Game[sup]) {
@@ -1732,7 +1745,7 @@
           }
           Game.demoFreeze = true;
         }
-        Game.announce = null;
+        if (!params.get("combotest")) Game.announce = null;
         if (!params.get("nopause")) Game.state = "paused";   // đóng băng để chụp
       }, 60);
     }
