@@ -100,10 +100,11 @@
         dmg:8, startup:70, active:90, recovery:170,
         reach:{dx:34,dy:-58,w:56,h:30}, knockback:230, launch:-40, meterGain:9,
         sfx:"punch", color:"#ff6b6b" },
-      ranged: { key:"ranged", name:"Gomu Gomu no Rocket", type:"projectile",
-        dmg:11, startup:150, active:0, recovery:300, meterGain:11,
-        sfx:"shoot",
-        proj:{ kind:"gum", speed:560, w:44, h:26, dmg:11, knockback:300, launch:-60, life:2000, color:"#ffcf9e" } },
+      ranged: { key:"ranged", name:"Gomu Gomu no Gatling", type:"projectile",
+        dmg:18, startup:120, active:360, recovery:240, meterGain:12,
+        sfx:"punch",
+        multiProj: { count: 6, interval: 60, dmg: 3, speed: 650 },
+        proj:{ kind:"gatling", speed:650, w:44, h:26, dmg:3, knockback:110, launch:-22, life:1000, color:"#ffcf9e" } },
       special: { key:"special", name:"Red Hawk", type:"projectile",
         dmg:22, startup:230, active:0, recovery:430, meterCost:50, meterGain:0,
         sfx:"special",
@@ -175,6 +176,43 @@
         ctx.strokeStyle = "rgba(255,255,255,0.45)"; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(-90, -10); ctx.lineTo(-50, -10);
         ctx.moveTo(-90, 10); ctx.lineTo(-50, 10);
+        ctx.stroke();
+      } else if (kind === "gatling") {
+        // Gomu Gomu no Gatling - Cánh tay kéo dài kết nối trực tiếp từ vai của Luffy
+        const dx = (this.owner.x - this.x) * this.dir;
+        const dy = (this.owner.y - 75) - this.y;
+        const L = Math.sqrt(dx * dx + dy * dy) || 1;
+        const ux = -dx / L;
+        const uy = -dy / L;
+        const sleeveLen = Math.min(30, L * 0.4);
+
+        // 1. Vẽ ống tay áo đỏ co giãn từ vai
+        ctx.strokeStyle = "#e5342e"; ctx.lineWidth = 16; ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(dx, dy);
+        ctx.lineTo(dx + ux * sleeveLen, dy + uy * sleeveLen);
+        ctx.stroke();
+
+        // 2. Vẽ cánh tay kéo dài màu da trần nối tiếp tới nắm đấm
+        ctx.strokeStyle = "#e0a06f"; ctx.lineWidth = 12; ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(dx + ux * (sleeveLen * 0.8), dy + uy * (sleeveLen * 0.8));
+        ctx.lineTo(0, 0);
+        ctx.stroke();
+
+        // 3. Nắm đấm rực lửa/có lực đấm
+        ctx.fillStyle = color || "#ffcf9e";
+        ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#e0a06f";
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath(); ctx.arc(8, -6 + i * 6, 3.5, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // 4. Vệt gió lướt vung đấm siêu tốc
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.45)"; ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(-35, -8); ctx.lineTo(-10, -8);
+        ctx.moveTo(-35, 8); ctx.lineTo(-10, 8);
         ctx.stroke();
       } else if (kind === "redhawk") {
         // Red Hawk - Nắm đấm lửa rực cháy hoành tráng
@@ -408,12 +446,38 @@
         else if (a.elapsed < aEnd || d.type==="projectile") a.phase = "active";
         else a.phase = "recovery";
 
-        // sinh projectile (một lần, khi vào active)
-        if (d.type === "projectile" && !a.spawned && a.elapsed >= sEnd) {
-          a.spawned = true;
-          Game.projectiles.push(new Projectile(this, d.proj));
-          this.gainMeter(d.meterGain || 0);
-          if (d.sfx === "special") Sound.special();
+        // sinh projectile (hỗ trợ loạt đạn hoặc đơn lẻ)
+        if (d.type === "projectile" && a.elapsed >= sEnd) {
+          if (d.multiProj) {
+            if (a.spawnedCount === undefined) a.spawnedCount = 0;
+            const nextSpawnTime = sEnd + a.spawnedCount * d.multiProj.interval;
+            if (a.elapsed >= nextSpawnTime && a.spawnedCount < d.multiProj.count) {
+              const isLast = a.spawnedCount === d.multiProj.count - 1;
+              const pDef = {
+                kind: "gatling",
+                speed: d.multiProj.speed,
+                w: d.proj.w,
+                h: d.proj.h,
+                dmg: isLast ? d.multiProj.dmg + 2 : d.multiProj.dmg,
+                knockback: isLast ? d.proj.knockback * 2.2 : d.proj.knockback,
+                launch: isLast ? d.proj.launch * 1.8 : d.proj.launch,
+                life: d.proj.life,
+                color: d.proj.color
+              };
+              const proj = new Projectile(this, pDef);
+              // Lệch trục Y một ít ngẫu nhiên tạo độ loe cho thế liên hoàn đấm
+              proj.y += (Math.random() * 32 - 16);
+              Game.projectiles.push(proj);
+              this.gainMeter(2);
+              Sound.punch();
+              a.spawnedCount++;
+            }
+          } else if (!a.spawned) {
+            a.spawned = true;
+            Game.projectiles.push(new Projectile(this, d.proj));
+            this.gainMeter(d.meterGain || 0);
+            if (d.sfx === "special") Sound.special();
+          }
         }
 
         if (a.elapsed >= rEnd) {
@@ -870,9 +934,34 @@
 
     drawFrontArmLuffy(swing, skin, skinSh) {
       const attacking = this.state === "attack" && this.attack;
+      const y = -75;
+
+      // Hiệu ứng liên hoàn đấm mờ cho chiêu Gatling Cao Su
+      if (attacking && this.attack.def.key === "ranged") {
+        ctx.save();
+        ctx.strokeStyle = "rgba(224, 160, 111, 0.4)";
+        ctx.lineWidth = 9;
+        const anim = this.animTime * 25;
+        for (let i = 0; i < 3; i++) {
+          const angle = (anim + i * 2) % (Math.PI * 2);
+          const bx = 12 + Math.cos(angle) * 12;
+          const by = y + Math.sin(angle) * 12;
+          ctx.beginPath();
+          ctx.moveTo(12, -84);
+          ctx.lineTo(bx, by);
+          ctx.stroke();
+          
+          ctx.fillStyle = "rgba(246, 207, 164, 0.5)";
+          ctx.beginPath();
+          ctx.arc(bx, by, 7, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+        return;
+      }
+
       const isMelee = attacking && this.attack.def.type === "melee";
       const reach = isMelee ? 20 + swing * 46 : (attacking ? 24 + swing * 8 : 7);
-      const y = -75;
       ctx.lineCap = "round"; ctx.lineJoin = "round";
       // vệt tốc độ khi đấm cao su
       if (isMelee && this.attack.phase !== "startup") {
