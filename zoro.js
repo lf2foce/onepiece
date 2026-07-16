@@ -103,10 +103,8 @@
       // Chân sau (Trái) - Khuỵu tự nhiên
       const kneeL = -6 + Math.sin(legs.a) * 16;
       const footL = kneeL + Math.sin(legs.a) * 8 + 4;
-      ctx.strokeStyle = pantsSh; ctx.lineWidth = 15;
-      ctx.beginPath(); ctx.moveTo(-6, -52); ctx.lineTo(kneeL, -28); ctx.stroke();
-      ctx.strokeStyle = pantsSh; ctx.lineWidth = 12;
-      ctx.beginPath(); ctx.moveTo(kneeL, -28); ctx.lineTo(footL, -10); ctx.stroke();
+      ctx.strokeStyle = pantsSh; ctx.lineWidth = 16;
+      ctx.beginPath(); ctx.moveTo(-6, -52); ctx.lineTo(kneeL, -28); ctx.lineTo(footL, -10); ctx.stroke();
       // Giày sau
       ctx.fillStyle = "#1e1f26"; roundRect(ctx, footL - 7, -11, 22, 9, 4); ctx.fill();
       ctx.fillStyle = "#0c0d10"; roundRect(ctx, footL - 7, -4, 22, 4, 2); ctx.fill();
@@ -114,17 +112,20 @@
       // Chân trước (Phải) - Đứng tấn dứt khoát
       const kneeR = 6 + Math.sin(legs.b) * 16;
       const footR = kneeR + Math.sin(legs.b) * 8 + 4;
+      // viền contour ống quần
+      ctx.strokeStyle = "#000000"; ctx.lineWidth = 17;
+      ctx.beginPath(); ctx.moveTo(6, -52); ctx.lineTo(kneeR, -28); ctx.lineTo(footR, -10); ctx.stroke();
       ctx.strokeStyle = pantsCol; ctx.lineWidth = 15;
-      ctx.beginPath(); ctx.moveTo(6, -52); ctx.lineTo(kneeR, -28); ctx.stroke();
-      ctx.strokeStyle = pantsCol; ctx.lineWidth = 12;
-      ctx.beginPath(); ctx.moveTo(kneeR, -27); ctx.lineTo(footR, -10); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(6, -52); ctx.lineTo(kneeR, -28); ctx.lineTo(footR, -10); ctx.stroke();
       // Giày trước (Boots)
-      ctx.fillStyle = "#262830"; roundRect(ctx, footR - 7, -11, 22, 9, 4); ctx.fill();
+      ctx.fillStyle = "#2b2d36"; roundRect(ctx, footR - 7, -11, 22, 9, 4); ctx.fill();
       ctx.fillStyle = "#0f1013"; roundRect(ctx, footR - 7, -4, 22, 4, 2); ctx.fill();
-      // Gân sáng dọc ống quần + ánh bóng mũi bốt -> khối chân rõ hơn
-      ctx.strokeStyle = "rgba(255,255,255,0.12)"; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(kneeR + 2, -27); ctx.lineTo(footR + 1, -12); ctx.stroke();
-      ctx.fillStyle = "rgba(255,255,255,0.16)"; roundRect(ctx, footR - 6, -11, 18, 2.4, 1.4); ctx.fill();
+      // Gân sáng dọc ống quần + đầu gối + ánh bóng mũi bốt -> khối chân rõ hơn
+      ctx.strokeStyle = "rgba(255,255,255,0.14)"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(kneeR + 3, -27); ctx.lineTo(footR + 1, -13); ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,0.10)";
+      ctx.beginPath(); ctx.arc(kneeR + 1, -28, 3.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.18)"; roundRect(ctx, footR - 6, -11, 18, 2.4, 1.4); ctx.fill();
 
       // ---- ÁO VÕ PHỤC TRẮNG (Cơ bắp vai rộng V-Shape siêu dũng mãnh) ----
       const sg = ctx.createLinearGradient(-14, -105, 14, -62);
@@ -135,9 +136,23 @@
       ctx.lineTo(11, -62); ctx.lineTo(-11, -62);
       ctx.closePath();
       ctx.fill();
+      // viền contour cel-shading
+      ctx.strokeStyle = flash ? "#cfcfc2" : "#b0b0a4"; ctx.lineWidth = 1.8; ctx.stroke();
 
-      // Rim-light cạnh trái áo võ phục cho khối nổi 3D
-      ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = 2;
+      // Bóng đổ tối bên phải áo (khối 3D)
+      ctx.fillStyle = "rgba(150,150,138,0.38)";
+      ctx.beginPath();
+      ctx.moveTo(6, -104); ctx.quadraticCurveTo(11, -84, 10, -62);
+      ctx.lineTo(4, -62); ctx.quadraticCurveTo(7, -84, 3, -104);
+      ctx.closePath(); ctx.fill();
+      // Nếp gấp vải áo gi
+      ctx.strokeStyle = "rgba(150,150,138,0.5)"; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-8, -100); ctx.quadraticCurveTo(-10, -82, -8, -64);
+      ctx.moveTo(9, -100);  ctx.quadraticCurveTo(11, -82, 9, -64);
+      ctx.stroke();
+      // Rim-light cạnh trái áo võ phục
+      ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(-13, -104); ctx.quadraticCurveTo(-12, -84, -10, -63); ctx.stroke();
 
       // Vết sẹo chém chéo của Mihawk khổng lồ sắc sảo trên ngực áo
@@ -167,6 +182,9 @@
       hg.addColorStop(0, green); hg.addColorStop(1, greenSh);
       ctx.fillStyle = hg;
       roundRect(ctx, -13, -66, 26, 24, 5); ctx.fill();
+      ctx.strokeStyle = flash ? "#2a7a48" : "#0f4a24"; ctx.lineWidth = 1.6; ctx.stroke();  // viền contour
+      // bóng đổ nửa dưới haramaki
+      ctx.fillStyle = "rgba(10,60,25,0.28)"; roundRect(ctx, -13, -50, 26, 8, 3); ctx.fill();
       // Vẽ các sợi thớ dệt xếp lớp dọc Haramaki
       ctx.strokeStyle = "rgba(10, 80, 30, 0.28)"; ctx.lineWidth = 1;
       for (let ox = -10; ox <= 10; ox += 4) {
@@ -255,7 +273,12 @@
       fg.addColorStop(0, skin); fg.addColorStop(1, skinSh);
       ctx.fillStyle = fg;
       ctx.beginPath(); ctx.arc(0, -121, 12, 0, Math.PI * 2); ctx.fill();
-      
+      // viền contour mặt + bóng hàm (cel-shading)
+      ctx.strokeStyle = "rgba(120,80,55,0.4)"; ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.arc(0, -121, 12, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = "rgba(150,95,60,0.18)";
+      ctx.beginPath(); ctx.ellipse(-6, -117, 4.3, 6.5, 0.25, 0, Math.PI * 2); ctx.fill();
+
       // tai + 3 khuyên vàng bên tai trái khẽ đung đưa nhẹ
       ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(-11, -120, 2.5, 0, Math.PI * 2); ctx.fill();
       const sway = Math.sin(this.animTime * 4.5) * 1.0;
@@ -300,6 +323,9 @@
         ctx.closePath(); ctx.fill();
         ctx.fillStyle = greenSh;
         ctx.beginPath(); ctx.moveTo(-2, -136); ctx.lineTo(2, -125); ctx.lineTo(-1, -126); ctx.closePath(); ctx.fill();
+        // ánh tóc (sheen) lục bảo bóng
+        ctx.strokeStyle = flash ? "#c8ffe0" : "#8fffbf"; ctx.lineWidth = 1.5; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(-8, -128); ctx.quadraticCurveTo(-2, -131, 5, -128); ctx.stroke();
       }
 
       // Vẽ chiếc mũi dễ thương kiểu anime nghiêm nghị
@@ -374,10 +400,20 @@
       ctx.save();
       ctx.translate(11, -93);
       ctx.rotate(ang);
-      // cánh tay thon cơ bắp
-      ctx.strokeStyle = skin; ctx.lineCap = "round"; ctx.lineJoin = "round";
-      ctx.lineWidth = 11;
+      // viền contour cánh tay
+      ctx.strokeStyle = "#a5734a"; ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.lineWidth = 13;
       ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(12, 3); ctx.lineTo(24, 3); ctx.stroke();
+      // cánh tay cơ bắp
+      ctx.strokeStyle = skin; ctx.lineWidth = 11;
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(12, 3); ctx.lineTo(24, 3); ctx.stroke();
+      // khối cơ (highlight + bóng)
+      ctx.strokeStyle = "rgba(255,224,196,0.7)"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(1, -1.5); ctx.lineTo(12, 1.5); ctx.stroke();
+      ctx.strokeStyle = "rgba(150,95,58,0.35)"; ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.moveTo(2, 4); ctx.lineTo(13, 6); ctx.stroke();
+      // bàn tay
+      ctx.fillStyle = "#a5734a"; ctx.beginPath(); ctx.arc(24, 3, 5.8, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(24, 3, 5, 0, Math.PI * 2); ctx.fill();
 
       // ---- katana bảo kiếm ----
