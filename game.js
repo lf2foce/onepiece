@@ -289,8 +289,8 @@
       this.flash = 140;
       Sound.hit();
       Game.addHitSpark(this.x, this.y - 70, blocked, isSpecial);
-      // HITSTOP — đóng băng vài chục ms để cú đánh "nặng tay"
-      Game.hitstop = Math.max(Game.hitstop, blocked ? 45 : (isSpecial ? 130 : 85));
+      // HITSTOP — khựng nhanh, gọn để cú đánh có lực mà không lợn cợn
+      Game.hitstop = Math.max(Game.hitstop, blocked ? 22 : (isSpecial ? 70 : 45));
       if (isSpecial && !blocked) Game.flashScreen = 1;
       if (this.hp <= 0) {
         this.hp = 0; this.state = "ko";
