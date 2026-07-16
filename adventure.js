@@ -14,6 +14,8 @@
   const canvas = document.getElementById("game");
   const ctx = canvas ? canvas.getContext("2d") : null;
 
+  const LAND_X = 1400;   // Từ mốc này trở đi: rời boong tàu, lên RỪNG ĐẢO (bàn 2 trở đi)
+
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const rectsOverlap = (a, b) =>
     a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
@@ -603,37 +605,121 @@
         ctx.fillStyle = "rgba(255,220,140,.92)";
         ctx.beginPath(); ctx.arc(sunX, sunY, 60, 0, Math.PI*2); ctx.fill();
 
-        ctx.fillStyle = "#2274b4";
-        ctx.fillRect(this.cameraX, GROUND - 70, W, 70); // Biển xanh
+        const camL = this.cameraX, camR = this.cameraX + W;
 
-        // ---- SÀN ĐẤU BOONG TÀU GỖ GOING MERRY DÀI VÔ TẬN VẼ ĐỘ SÂU 2.5D CỰC RỘNG ----
-        ctx.fillStyle = "#633816";
-        ctx.fillRect(this.cameraX, GROUND - 50, W, H - (GROUND - 50)); // Mở rộng mặt gỗ lên phía sâu trên trần
-        
-        // Các lằn ván gỗ ngang dọc cuộn dài
-        ctx.strokeStyle = "#49260c"; ctx.lineWidth = 2.5;
-        for (let y = GROUND - 45; y < H; y += 18) {
-          ctx.beginPath(); ctx.moveTo(this.cameraX, y); ctx.lineTo(this.cameraX + W, y); ctx.stroke();
-        }
-        // Đổ bóng tối nhạt cho phần Boong tàu sâu bên trong màn hình tạo chiều sâu 3D chân thực!
-        const deepShadow = ctx.createLinearGradient(0, GROUND - 50, 0, H);
-        deepShadow.addColorStop(0, "rgba(0, 0, 0, 0.42)");
-        deepShadow.addColorStop(0.3, "rgba(0, 0, 0, 0.12)");
-        deepShadow.addColorStop(0.7, "rgba(0, 0, 0, 0)");
-        deepShadow.addColorStop(1, "rgba(0, 0, 0, 0.15)");
-        ctx.fillStyle = deepShadow;
-        ctx.fillRect(this.cameraX, GROUND - 50, W, H - (GROUND - 50));
+        // ============ VÙNG 1: BIỂN + BOONG TÀU GOING MERRY (x < LAND_X) ============
+        if (camL < LAND_X) {
+          ctx.save();
+          ctx.beginPath(); ctx.rect(camL, 0, Math.min(camR, LAND_X) - camL, H); ctx.clip();
 
-        // Vẽ các khớp mối ván và đinh tán đồng gia cố
-        ctx.strokeStyle = "#49260c"; ctx.lineWidth = 1.5;
-        const startTile = Math.floor(this.cameraX / 110) * 110 - 110;
-        for (let x = startTile; x < this.cameraX + W + 110; x += 110) {
-          const offset = (Math.floor(x / 110) % 2) * 55;
+          ctx.fillStyle = "#2274b4";
+          ctx.fillRect(camL, GROUND - 70, W, 70); // Biển xanh
+
+          // ---- SÀN ĐẤU BOONG TÀU GỖ ----
+          ctx.fillStyle = "#633816";
+          ctx.fillRect(camL, GROUND - 50, W, H - (GROUND - 50));
+
+          ctx.strokeStyle = "#49260c"; ctx.lineWidth = 2.5;
           for (let y = GROUND - 45; y < H; y += 18) {
-            ctx.beginPath(); ctx.moveTo(x + offset, y); ctx.lineTo(x + offset, y + 18); ctx.stroke();
-            ctx.fillStyle = "#2c1505";
-            ctx.beginPath(); ctx.arc(x + offset - 4, y + 9, 1.5, 0, Math.PI*2); ctx.arc(x + offset + 4, y + 9, 1.5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(camL, y); ctx.lineTo(camR, y); ctx.stroke();
           }
+          const deepShadow = ctx.createLinearGradient(0, GROUND - 50, 0, H);
+          deepShadow.addColorStop(0, "rgba(0, 0, 0, 0.42)");
+          deepShadow.addColorStop(0.3, "rgba(0, 0, 0, 0.12)");
+          deepShadow.addColorStop(0.7, "rgba(0, 0, 0, 0)");
+          deepShadow.addColorStop(1, "rgba(0, 0, 0, 0.15)");
+          ctx.fillStyle = deepShadow;
+          ctx.fillRect(camL, GROUND - 50, W, H - (GROUND - 50));
+
+          ctx.strokeStyle = "#49260c"; ctx.lineWidth = 1.5;
+          const startTile = Math.floor(camL / 110) * 110 - 110;
+          for (let x = startTile; x < camR + 110; x += 110) {
+            const offset = (Math.floor(x / 110) % 2) * 55;
+            for (let y = GROUND - 45; y < H; y += 18) {
+              ctx.beginPath(); ctx.moveTo(x + offset, y); ctx.lineTo(x + offset, y + 18); ctx.stroke();
+              ctx.fillStyle = "#2c1505";
+              ctx.beginPath(); ctx.arc(x + offset - 4, y + 9, 1.5, 0, Math.PI*2); ctx.arc(x + offset + 4, y + 9, 1.5, 0, Math.PI*2); ctx.fill();
+            }
+          }
+          ctx.restore();
+        }
+
+        // ============ VÙNG 2: RỪNG ĐẢO (x >= LAND_X) ============
+        if (camR > LAND_X) {
+          const lL = Math.max(camL, LAND_X), lR = camR;
+          const g0 = GROUND - 70;                      // "chân trời" của đảo
+          ctx.save();
+          ctx.beginPath(); ctx.rect(lL, 0, lR - lL, H); ctx.clip();
+
+          // 1. Rừng xa: dải tán cây lô nhô (silhouette)
+          ctx.fillStyle = "#123a24";
+          ctx.fillRect(lL, g0 - 58, lR - lL, 70);
+          const step = 88;
+          const s0 = Math.floor(lL / step) * step - step;
+          for (let x = s0; x < lR + step; x += step) {
+            const k = Math.floor(x / step);
+            const h = 42 + ((k * 37) % 34);
+            ctx.fillStyle = (k % 2) ? "#1d5636" : "#22673f";
+            ctx.beginPath(); ctx.arc(x + step / 2, g0 - h * 0.42, h * 0.66, Math.PI, 0); ctx.fill();
+          }
+
+          // 2. Mặt đất: cỏ xanh + đất nâu (bãi cát ở mép bờ)
+          ctx.fillStyle = "#2f7a3f";
+          ctx.fillRect(lL, g0, lR - lL, 24);
+          ctx.fillStyle = "#6b4a2a";
+          ctx.fillRect(lL, g0 + 20, lR - lL, H - (g0 + 20));
+          if (lL < LAND_X + 150) {                     // bãi cát chỗ vừa lên bờ
+            ctx.fillStyle = "#d9c08a";
+            ctx.fillRect(LAND_X, g0, Math.min(lR, LAND_X + 150) - LAND_X, 24);
+            ctx.fillStyle = "#c2a774";
+            ctx.fillRect(LAND_X, g0 + 20, Math.min(lR, LAND_X + 150) - LAND_X, 40);
+          }
+          const deep = ctx.createLinearGradient(0, g0 + 20, 0, H);
+          deep.addColorStop(0, "rgba(0,0,0,0.40)");
+          deep.addColorStop(0.35, "rgba(0,0,0,0.10)");
+          deep.addColorStop(1, "rgba(0,0,0,0.20)");
+          ctx.fillStyle = deep;
+          ctx.fillRect(lL, g0 + 20, lR - lL, H - (g0 + 20));
+
+          // 3. Bụi cỏ + đá lác đác trên nền đất
+          for (let x = Math.floor(lL / 70) * 70 - 70; x < lR + 70; x += 70) {
+            const k = Math.floor(x / 70);
+            const gy = g0 + 34 + ((k * 53) % 90);
+            if (gy > H - 6) continue;
+            if (k % 3 === 0) {
+              ctx.fillStyle = "rgba(60,40,22,0.7)";
+              ctx.beginPath(); ctx.ellipse(x + (k * 17) % 50, gy, 7, 4, 0, 0, Math.PI * 2); ctx.fill();
+            } else {
+              ctx.strokeStyle = "rgba(70,150,80,0.55)"; ctx.lineWidth = 2;
+              const bx = x + (k * 23) % 60;
+              ctx.beginPath();
+              ctx.moveTo(bx, gy); ctx.lineTo(bx - 4, gy - 8);
+              ctx.moveTo(bx, gy); ctx.lineTo(bx + 1, gy - 10);
+              ctx.moveTo(bx, gy); ctx.lineTo(bx + 5, gy - 7);
+              ctx.stroke();
+            }
+          }
+
+          // 4. Cây cọ/thân to phía sau (đứng trên đường chân trời đảo)
+          const tstep = 250;
+          const t0 = Math.floor(lL / tstep) * tstep - tstep;
+          for (let x = t0; x < lR + tstep; x += tstep) {
+            const k = Math.floor(x / tstep);
+            const tx = x + 70 + ((k * 53) % 90);
+            const th = 118 + ((k * 29) % 66);
+            ctx.fillStyle = "#4a3018";                 // thân
+            ctx.fillRect(tx - 8, g0 - th, 16, th + 16);
+            ctx.fillStyle = "rgba(0,0,0,0.18)";
+            ctx.fillRect(tx + 2, g0 - th, 6, th + 16);
+            ctx.fillStyle = (k % 2) ? "#2b8a4a" : "#267940";   // tán lá (2 tông xen kẽ)
+            ctx.beginPath(); ctx.arc(tx, g0 - th - 8, 44, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#38a95e";
+            ctx.beginPath(); ctx.arc(tx - 18, g0 - th - 24, 29, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(tx + 21, g0 - th - 18, 25, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "rgba(255,255,255,0.10)";
+            ctx.beginPath(); ctx.arc(tx - 10, g0 - th - 26, 14, 0, Math.PI * 2); ctx.fill();
+          }
+          ctx.restore();
         }
 
         // Vẽ mốc báo hiệu làn wave lính dưới mặt sàn gỗ

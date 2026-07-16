@@ -2400,6 +2400,8 @@
         }
         if (params.get("lx")) Game.luffy.x = +params.get("lx");
         if (params.get("zx")) Game.zoro.x = +params.get("zx");
+        // ép camera để chụp cảnh nền (đi bài), đóng băng luôn
+        if (params.get("cam")) { Game.cameraX = +params.get("cam"); Game.demoFreeze = true; }
         // TEST: chạy 1 tick với intent block+special để kiểm tra siêu chiêu 2
         if (params.get("combotest")) {
           const testIntent = { left:false, right:false, jump:false, block:true, close:false, ranged:false, special:true };
