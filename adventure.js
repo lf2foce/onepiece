@@ -404,9 +404,13 @@
           // Áp hướng nhìn ngay (khoá khi đang ra đòn để đòn tung đúng hướng, không xoay về đối thủ)
           if (p.state !== "attack") p.facing = p._faceWant;
 
-          // XOÁ PHÍM JUMP/BLOCK ĐỂ TRÁNH TRÙNG LẬP HÀNH ĐỘNG CỦA GAME GỐC
+          // XOÁ PHÍM JUMP ĐỂ TRÁNH TRÙNG LẬP HÀNH ĐỘNG CỦA GAME GỐC (đi bài không nhảy, ↑ là lách làn)
           intents.jump = false;
-          intents.block = false;
+          // ↓ vừa là lách làn xuống, vừa là phím chọn BIẾN THỂ chiêu (↓+cận / ↓+xa / ↓+skill).
+          // Chỉ giữ lại khi bấm KÈM phím đòn: như vậy không bao giờ vào thế đỡ (đi bài không có đỡ)
+          // mà vẫn mở được đòn nặng, tán xạ, ult và biến hình.
+          // Trước đây xoá thẳng block = false nên cả 3 ô biến thể đều chết trong chế độ này.
+          intents.block = intents.block && (intents.close || intents.ranged || intents.special);
         }
 
         // Đẩy nhau 2D
