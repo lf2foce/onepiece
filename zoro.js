@@ -29,6 +29,12 @@
         dmg:22, startup:300, active:0, recovery:440, meterCost:100, meterGain:0,
         sfx:"slash", cry:"Sanzen Sekai!",
         proj:{ kind:"sanzen", speed:540, w:96, h:150, dmg:22, knockback:540, launch:-160, life:2600, color:"#8fffbf" } },
+      // SIÊU CHIÊU 3 (↓+xa) — chém một lúc nhiều lưỡi kiếm khí toả ra nhiều hướng
+      pound108: { key:"pound108", name:"Hyakuhachi Pound Hō — 108 Pao Phách", type:"projectile",
+        dmg:6, startup:210, active:0, recovery:400, meterCost:50, meterGain:0,
+        sfx:"slash", cry:"Hyakuhachi Pound Ho!",
+        spread: { count: 7, arcDeg: 82, dmg: 6, speed: 620 },
+        proj:{ kind:"slash", speed:620, w:40, h:70, dmg:6, knockback:200, launch:-60, life:1500, color:"#9affc4" } },
     };
 
     // Helper draw round rect

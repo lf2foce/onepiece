@@ -32,10 +32,17 @@
         sfx:"special", cry:"Diable Jambe! Flambage Shot!", color:"#ff3a1a" },
       // 5. SIÊU CHIÊU 2 (↓+skill khi full Haki): lửa XANH Ifrit, lao nhanh & mạnh hơn
       ifrit: { key:"ifrit", name:"Ifrit Jambe: Bien Cuit", type:"melee",
-        dmg:27, startup:300, active:340, recovery:430, meterCost:100, meterGain:0,
-        dash: 1080,
+        dmg:27, startup:560, active:340, recovery:420, meterCost:100, meterGain:0,
+        // Sky Walk 2 bước lên không trung -> khoá ngay trên đầu đối thủ -> bổ thẳng xuống đá. LUÔN TRÚNG.
+        skywalkDive: { steps: 2, height: 215 },
         reach:{dx:18,dy:-124,w:114,h:104}, knockback:600, launch:-210,
         sfx:"special", cry:"Ifrit Jambe!", color:"#3aa0ff" },
+      // 6. SIÊU CHIÊU 3 (↓+xa): quạt lửa nhiều lưỡi đá toả ra khắp hướng
+      grill: { key:"grill", name:"Diable Jambe: Grill Shot", type:"projectile",
+        dmg:6, startup:200, active:0, recovery:390, meterCost:50, meterGain:0,
+        sfx:"punch", cry:"Grill Shot!",
+        spread: { count: 7, arcDeg: 76, dmg: 6, speed: 690 },
+        proj:{ kind:"fire_kick", speed:690, w:52, h:34, dmg:6, knockback:170, launch:-45, life:1400, color:"#ff7f00" } },
     };
 
     // Helper draw round rect

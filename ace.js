@@ -18,7 +18,7 @@
         sfx:"punch",
         multiProj: { count: 5, interval: 68, dmg: 3, speed: 720 },
         proj:{ kind:"fire_bullet", speed:720, w:38, h:22, dmg:3, knockback:110, launch:-20, life:1000, color:"#ff8c00" } },
-      // SIÊU CHIÊU 2 khi chưa đầy Haki (↓+skill) — quét sóng lửa ảo ảnh tầm trung
+      // ↓+skill khi CHƯA đầy Haki: đòn đặc biệt thường, miễn phí Haki (không phải siêu chiêu)
       kagerou: { key:"kagerou", name:"Kagerou — Sóng Lửa Ảo Ảnh", type:"melee",
         dmg:16, startup:200, active:220, recovery:260,
         reach:{dx:18,dy:-130,w:250,h:130}, knockback:330, launch:-70, meterGain:14,
@@ -27,12 +27,18 @@
         dmg:23, startup:220, active:0, recovery:420, meterCost:50, meterGain:0,
         sfx:"special", cry:"Hiken!",
         proj:{ kind:"hiken", speed:640, w:170, h:130, dmg:23, knockback:520, launch:-180, life:2200, color:"#ff4500" } },
-      // SIÊU CHIÊU 2 khi FULL Haki (↓+skill) — Đại Viêm Giới: Viêm Đế
+      // ↓+skill khi FULL Haki: SIÊU CHIÊU 2 — Đại Viêm Giới: Viêm Đế
       // Quả cầu lửa khổng lồ bung nổ ngay quanh thân Ace (đòn cuối đấu Râu Đen), hitbox phủ cả hai phía.
       entei: { key:"entei", name:"Dai Enkai: Entei", type:"melee",
         dmg:26, startup:380, active:300, recovery:520, meterCost:100, meterGain:0,
         reach:{dx:-210,dy:-360,w:420,h:400}, knockback:700, launch:-220,
         sfx:"special", cry:"Dai Enkai! Entei!", color:"#ff2a00" },
+      // SIÊU CHIÊU 3 (↓+xa) — đàn đom đóm lửa toả ra khắp hướng rồi thiêu rụi
+      hotarubi: { key:"hotarubi", name:"Hotarubi — Đom Đóm Lửa", type:"projectile",
+        dmg:6, startup:200, active:0, recovery:390, meterCost:50, meterGain:0,
+        sfx:"punch", cry:"Hotarubi!",
+        spread: { count: 8, arcDeg: 86, dmg: 6, speed: 620 },
+        proj:{ kind:"fire_bullet", speed:620, w:44, h:28, dmg:6, knockback:160, launch:-40, life:1500, color:"#ff8c00" } },
     };
 
     // Helper draw round rect

@@ -139,24 +139,35 @@
     zoro: {}
   };
 
-  // Chiêu ↓+skill theo nhân vật: chưa đầy Haki -> "special"; đầy 100% -> "ult" (siêu chiêu 2)
+  // ================================================================ 6 Ô CHIÊU
+  // Mỗi nhân vật có 3 phím đòn (cận / xa / skill). Thêm ↓ phía trước = PHIÊN BẢN KHÁC của ô đó.
+  // Trục Haki độc lập: chiêu nào có meterCost thì đầy 100% Haki sẽ ra bản SUPER (khựng hình + x2).
+  //   cận         -> đòn cận thường (miễn phí)
+  //   ↓+cận       -> đòn cận nặng (miễn phí)
+  //   xa          -> đòn xa thường (miễn phí)
+  //   ↓+xa        -> tán xạ nhiều hướng (50 Haki)  · full Haki -> ★ SIÊU CHIÊU 3
+  //   skill       -> tuyệt chiêu (50 Haki)         · full Haki -> ★ SIÊU CHIÊU 1
+  //   ↓+skill     -> tuyệt chiêu lớn (100 Haki)    · ★ SIÊU CHIÊU 2
   const DOWN_MOVES = {
-    luffy:  { special: "axe",      ult: "king" },
-    zoro:   { special: "asura",    ult: "sanzen" },
-    sanji:  { special: "concasse", ult: "ifrit" },
-    shanks: { special: "haoshoku", ult: "storm" },
-    ace:    { special: "kagerou",  ult: "entei" },
+    luffy:  { close: "axe",      ranged: "rain",     special: "king" },
+    zoro:   { close: "asura",    ranged: "pound108", special: "sanzen" },
+    sanji:  { close: "concasse", ranged: "grill",    special: "ifrit" },
+    shanks: { close: "haoshoku", ranged: "hakoku",   special: "storm" },
+    ace:    { close: "kagerou",  ranged: "hotarubi", special: "entei" },
+    aokiji: { close: "icetime",  ranged: "icerain",  special: "iceage" },
   };
 
-  // Tên hiển thị + biểu tượng + màu Haki riêng của từng đấu sĩ (dùng cho HUD và aura)
+  // Danh sách tướng dùng chung cho HUD, aura và bảng chọn tướng ở sảnh chờ.
+  // warm: tông màn khựng siêu chiêu (nóng = vàng/cam, nguội = xanh lá)
   const CHAR_INFO = {
-    // warm: tông màn khựng siêu chiêu (nóng = vàng/cam, nguội = xanh lá)
-    luffy:  { name: "LUFFY",  emoji: "👒", aura: "#ffd23f", warm: true },
-    zoro:   { name: "ZORO",   emoji: "⚔️", aura: "#bfffdb", warm: false },
-    sanji:  { name: "SANJI",  emoji: "🚬", aura: "#ff7f00", warm: true },
-    shanks: { name: "SHANKS", emoji: "👑", aura: "#ff5a5a", warm: true },
-    ace:    { name: "ACE",    emoji: "🔥", aura: "#ff8c00", warm: true },
+    luffy:  { name: "LUFFY",  emoji: "👒", aura: "#ffd23f", warm: true,  title: "Mũ Rơm",     desc: "Cao su · Gear 2" },
+    zoro:   { name: "ZORO",   emoji: "⚔️", aura: "#bfffdb", warm: false, title: "Tam Đao",    desc: "Kiếm sĩ · Ashura" },
+    sanji:  { name: "SANJI",  emoji: "🚬", aura: "#ff7f00", warm: true,  title: "Hắc Cước",   desc: "Chân lửa · Diable" },
+    shanks: { name: "SHANKS", emoji: "👑", aura: "#ff5a5a", warm: true,  title: "Tóc Đỏ",     desc: "Tứ Hoàng · Bá Vương" },
+    ace:    { name: "ACE",    emoji: "🔥", aura: "#ff8c00", warm: true,  title: "Hỏa Quyền",  desc: "Mera Mera · Hiken" },
+    aokiji: { name: "AOKIJI", emoji: "❄️", aura: "#7fdcff", warm: false, title: "Đô Đốc Băng", desc: "Hie Hie · Ice Age" },
   };
+  const ROSTER = ["luffy", "zoro", "sanji", "shanks", "ace", "aokiji"];
   const infoOf = id => CHAR_INFO[id] || CHAR_INFO.zoro;
 
   // ================================================================ PROJECTILE
@@ -168,21 +179,30 @@
       this.x = owner.x + owner.facing * 40;
       this.y = owner.y - 66;
       this.vx = def.speed * this.dir;
+      this.vy = 0;      // đạn tán xạ bay chéo; đạn thường vy = 0 nên bay ngang y như cũ
+      this.ang = 0;     // góc chệch so với hướng mặt (radian) -> dùng để xoay hình khi vẽ
       this.w = def.w; this.h = def.h;
       this.life = def.life;
       this.dead = false;
       this.t = 0;
     }
+    // Bắn chệch đi một góc: dùng cho đòn tán xạ nhiều hướng (siêu chiêu 3)
+    aimAt(ang, speed) {
+      this.ang = ang;
+      this.vx = Math.cos(ang) * speed * this.dir;
+      this.vy = Math.sin(ang) * speed;
+    }
     get rect() { return { x:this.x - this.w/2, y:this.y - this.h/2, w:this.w, h:this.h }; }
     update(dt) {
       this.t += dt * 1000;
       this.x += this.vx * dt;
+      this.y += this.vy * dt;
       this.life -= dt * 1000;
       // vệt đạn cho tuyệt chiêu
       if (this.d.kind === "redhawk") Game.addTrail(this.x - this.dir * 22, this.y, "#ff7a2b", "#ffd23f");
       else if (this.d.kind === "tatsumaki") Game.addTrail(this.x - this.dir * 10, this.y + (Math.random()*80 - 40), "#39d67e", "#bfffdb");
       else if (this.d.kind === "sanzen") Game.addTrail(this.x - this.dir * 14, this.y + (Math.random()*70 - 35), "#39d67e", "#d2ffe4");
-      if (this.life <= 0 || this.x < -80 || this.x > W + 80) this.dead = true;
+      if (this.life <= 0 || this.x < -80 || this.x > W + 80 || this.y < -140 || this.y > H + 80) this.dead = true;
     }
     draw() {
       const { kind, color } = this.d;
@@ -466,9 +486,9 @@
       if (!this.canAct()) return;
       const def = this.moves[kind];
       if (!def) return;
-      // SUPER: đầy Haki 100% -> siêu chiêu (khựng + mạnh). Các key ult2 chỉ tồn tại ở super
-      const ULT2_KEYS = ["king", "sanzen", "ifrit", "storm", "entei"];
-      const canSuper = (kind === "special" || ULT2_KEYS.includes(kind));
+      // SUPER: chiêu nào TỐN Haki thì đầy 100% sẽ ra bản super (khựng hình + sát thương x2).
+      // Đòn thường/đòn nặng miễn phí thì không có bản super.
+      const canSuper = !!def.meterCost;
       const isSuper = canSuper && this.meter >= 100;
       if (!isSuper && def.meterCost && this.meter < def.meterCost) return; // chưa đủ Haki
       if (isSuper) this.meter -= 100;
@@ -607,20 +627,22 @@
           }
 
           // tấn công (edge). ↓+skill: đầy Haki -> siêu chiêu 2, chưa đầy -> đặc biệt thường
-          const dm = DOWN_MOVES[this.id];
-          const downSkill = () => {
-            this.startAttack(this.meter >= 100 ? dm.ult : dm.special);
-            if (this.state === "attack") Sound.special();
+          // Mỗi ô: bấm thường -> chiêu gốc, giữ ↓ rồi bấm -> phiên bản khác của chính ô đó.
+          const dm = DOWN_MOVES[this.id] || {};
+          const fire = (slot) => {
+            // Giữ ↓ -> lấy biến thể của ô đó. Nếu tướng chưa có biến thể (hoặc file chiêu chưa nạp)
+            // thì rơi về đòn gốc, để phím không bị "bấm mà không ra gì".
+            const variant = intents.block ? dm[slot] : null;
+            const key = (variant && this.moves[variant]) ? variant : slot;
+            this.startAttack(key);
+            if (this.state !== "attack") return;
+            const def = this.moves[key];
+            const sfx = def && def.sfx ? def.sfx : "punch";
+            if (Sound[sfx]) Sound[sfx]();
           };
-          if (intents.close) { this.startAttack("close"); Sound[this.moves.close.sfx](); }
-          else if (intents.special) {
-            if (intents.block) downSkill();                              // ↓ + tuyệt chiêu -> chiêu 2
-            else this.startAttack("special");                           // tuyệt chiêu -> chiêu 1
-          }
-          else if (intents.ranged) {
-            if (intents.block) downSkill();                              // ↓ + skill xa (tương thích)
-            else { this.startAttack("ranged"); if (this.state === "attack") Sound[this.moves.ranged.sfx](); }
-          }
+          if (intents.close) fire("close");
+          else if (intents.special) fire("special");
+          else if (intents.ranged) fire("ranged");
         }
       }
 
@@ -652,9 +674,42 @@
           Game.addAxeSlamSparks(this.x + this.facing * 220); // Điểm nện gót chân của Luffy
         }
 
-        // sinh projectile (hỗ trợ loạt đạn hoặc đơn lẻ)
+        // sinh projectile (hỗ trợ tán xạ nan quạt / loạt đạn / đơn lẻ)
         if (d.type === "projectile" && a.elapsed >= sEnd) {
-          if (d.multiProj) {
+          if (d.spread) {
+            // TÁN XẠ: bắn cả chùm cùng lúc, toả đều quanh hướng mặt.
+            //  - 50 Haki : nan quạt về phía trước
+            //  - FULL Haki: TUYỆT KỸ — nổ thành vòng tròn 360° quanh mình, đạn dày & to gấp rưỡi
+            if (!a.spawned) {
+              a.spawned = true;
+              const sp = d.spread;
+              const sup = !!a.isSuper;
+              const n = sup ? (sp.superCount || sp.count + 5) : sp.count;
+              const arcDeg = sup ? (sp.superArcDeg || 360) : (sp.arcDeg || 70);
+              const full = arcDeg >= 359;                        // vòng tròn kín -> chia đều cả 360°
+              const arc = arcDeg * Math.PI / 180;
+              const speed = (sp.speed || d.proj.speed) * (sup ? 1.15 : 1);
+              const scale = sup ? 1.6 : 1;
+              for (let i = 0; i < n; i++) {
+                const ang = full ? (i / n) * Math.PI * 2
+                                 : (n === 1 ? 0 : -arc / 2 + arc * (i / (n - 1)));
+                const pdef = Object.assign({}, d.proj, {
+                  dmg: Math.round((sp.dmg || d.proj.dmg) * (sup ? 2.1 : 1)),
+                  knockback: d.proj.knockback * (sup ? 1.5 : 1),
+                  launch: (d.proj.launch || 0) * (sup ? 1.25 : 1),
+                  w: d.proj.w * scale, h: d.proj.h * scale,
+                  life: d.proj.life + (sup ? 500 : 0),
+                  super: sup,
+                });
+                const p = new Projectile(this, pdef);
+                if (full) p.x = this.x;                          // vòng tròn thì lấy chính mình làm tâm
+                p.aimAt(ang, speed);
+                Game.projectiles.push(p);
+              }
+              this.gainMeter(d.meterGain || 0);
+              Sound.special();
+            }
+          } else if (d.multiProj) {
             if (a.spawnedCount === undefined) a.spawnedCount = 0;
             const nextSpawnTime = sEnd + a.spawnedCount * d.multiProj.interval;
             if (a.elapsed >= nextSpawnTime && a.spawnedCount < d.multiProj.count) {
@@ -697,6 +752,52 @@
           }
         }
 
+        // SKY WALK + BỔ NHÀO (vd Ifrit Jambe của Sanji): nhảy từng bậc lên không trung,
+        // bậc cuối lượn tới ngay trên đầu đối thủ rồi lao thẳng xuống đá. Đòn này LUÔN TRÚNG:
+        // cú đá được tính trực tiếp lúc chạm đích, không phụ thuộc hitbox.
+        if (d.skywalkDive) {
+          const sw = d.skywalkDive;
+          const H = sw.height || 200, steps = sw.steps || 2;
+          this.vx = 0; this.vy = 0;
+          this._scripted = true;           // tự lo vị trí -> tắt trọng lực cho đòn này
+          this.onGround = false;
+
+          if (a.elapsed < sEnd) {
+            // ---- Leo Sky Walk từng bậc: bật nhanh lên một nấc rồi khựng chờ, rồi bật tiếp ----
+            const per = sEnd / steps;
+            const i = Math.min(steps - 1, Math.floor(a.elapsed / per));
+            const p = clamp((a.elapsed - i * per) / per, 0, 1);
+            const y0 = GROUND - (H * i) / steps;
+            const y1 = GROUND - (H * (i + 1)) / steps;
+            this.y = y0 + (y1 - y0) * (1 - Math.pow(1 - Math.min(1, p * 1.6), 2));
+            if (a.stepDone !== i) { a.stepDone = i; Sound.jump(); }
+            if (i === steps - 1) {
+              // bậc cuối: lượn ngang tới thẳng phía trên đối thủ
+              this.x += (opp.x - this.x) * clamp(5 * dt, 0, 1);
+              this.facing = opp.x >= this.x ? 1 : -1;
+            }
+          } else {
+            // ---- Bổ thẳng xuống, rơi nhanh dần đều ----
+            const p = clamp((a.elapsed - sEnd) / (d.active * 0.6), 0, 1);
+            if (p < 1 && !a.hit.has(opp)) this.x = opp.x - this.facing * 8;   // bám đúng trục -> luôn trúng
+            this.y = (GROUND - H) + H * (p * p);
+            if (p >= 1) { this.y = GROUND; this.onGround = true; }
+
+            if (p >= 0.9 && !a.hit.has(opp) && opp.state !== "ko") {
+              a.hit.add(opp);
+              const sup = a.isSuper;
+              opp.takeHit(sup ? Math.round(d.dmg * 2.1) : d.dmg,
+                          sup ? d.knockback * 1.5 : d.knockback,
+                          sup ? (d.launch || 0) * 1.3 : d.launch,
+                          this.facing, sup, this);
+              if (Game.addFireExplosion) Game.addFireExplosion(opp.x, opp.y - 70);
+              Game.addHitSpark(opp.x, opp.y - 70, false, true);
+              Game.hitstop = Math.max(Game.hitstop, 150);
+              Game.flashScreen = 1.3;
+            }
+          }
+        }
+
         // Xử lý di chuyển lướt thong thả siêu xa đặc biệt cho Ashura của Zoro (ở dưới đất)
         if (d.key === "asura") {
           if (a.phase === "startup") {
@@ -711,11 +812,12 @@
         if (a.elapsed >= rEnd) {
           this.state = "idle";
           this.attack = null;
+          this._scripted = false;
         }
       }
 
       // ------ vật lý ------
-      if (!this.onGround) {
+      if (!this.onGround && !this._scripted) {   // đòn tự lo quỹ đạo (Sky Walk) thì không rơi theo trọng lực
         this.vy += GRAVITY * dt;
       }
       this.x += this.vx * dt;
@@ -743,6 +845,7 @@
       const d = this.attack.def;
       if (d.type !== "melee") return null;
       if (this.attack.phase !== "active") return null;
+      if (d.skywalkDive) return null;   // cú đá bổ nhào tính trúng trực tiếp lúc chạm đích, không dùng hitbox
       // King Kong Gun: hitbox ĐỘNG bám theo nắm đấm vươn xa (trùng công thức vẽ)
       if (d.key === "king") {
         const sw = Math.max(0, this.armSwing());
@@ -857,6 +960,7 @@
       else if (s.id === "sanji" && this.drawSanji) this.drawSanji(flashing);
       else if (s.id === "shanks" && this.drawShanks) this.drawShanks(flashing);
       else if (s.id === "ace" && this.drawAce) this.drawAce(flashing);
+      else if (s.id === "aokiji" && this.drawAokiji) this.drawAokiji(flashing);
 
       ctx.restore();
     }
@@ -977,6 +1081,7 @@
     if (window.SanjiInit) window.SanjiInit(Fighter, MOVES);
     if (window.ShanksInit) window.ShanksInit(Fighter, MOVES);
     if (window.AceInit) window.AceInit(Fighter, MOVES);
+    if (window.AokijiInit) window.AokijiInit(Fighter, MOVES);
   }
 
   // helper vẽ chữ nhật bo góc
@@ -1041,7 +1146,7 @@
         // khoảng cách trung: tiến, bắn hoặc kích hoạt Ashura xoay nhảy
         if (Math.random() < 0.04) {
           if (Math.random() < 0.35 && f.id === "zoro") {
-            intents.block = true; intents.ranged = true; // Kích hoạt Ashura
+            intents.block = true; intents.special = true; // ↓ + skill -> kích hoạt Ashura
           } else {
             intents.ranged = true;
           }
@@ -1097,50 +1202,70 @@
       document.getElementById("resultBtn").addEventListener("click", () => this.onResultContinue());
       document.getElementById("menuBtn").addEventListener("click", () => this.toMenu());
 
-      // Lập trình chọn nhân vật trực quan trên sảnh chờ (Luffy / Zoro / Sanji / Shanks)
-      const CHARS_P1 = [
-        { id: "luffy", name: "LUFFY", emoji: "👒", title: "P1: Mũ Rơm" },
-        { id: "sanji", name: "SANJI", emoji: "🚬", title: "P1: Hắc Cước" },
-        { id: "shanks", name: "SHANKS", emoji: "👑", title: "P1: Tóc Đỏ" },
-        { id: "ace", name: "ACE", emoji: "🔥", title: "P1: Hỏa Quyền" }
-      ];
-      const CHARS_P2 = [
-        { id: "zoro", name: "ZORO", emoji: "⚔️", title: "P2: Tam Đao" },
-        { id: "sanji", name: "SANJI", emoji: "🚬", title: "P2: Hắc Cước" },
-        { id: "shanks", name: "SHANKS", emoji: "👑", title: "P2: Tóc Đỏ" },
-        { id: "ace", name: "ACE", emoji: "🔥", title: "P2: Hỏa Quyền" }
-      ];
+      // ---- BẢNG CHỌN TƯỚNG: bấm vào ô đấu sĩ -> mở hẳn danh sách để pick ----
+      // Cả 2 người chơi dùng chung một roster đầy đủ (P1 chọn được Zoro, P2 chọn được Luffy).
       this.p1CharId = "luffy";
       this.p2CharId = "zoro";
-      let p1Idx = 0;
-      let p2Idx = 0;
 
       const p1Btn = document.getElementById("p1Select");
       const p2Btn = document.getElementById("p2Select");
+      const picker = document.getElementById("charPicker");
+      const grid = document.getElementById("charGrid");
+      const pickerTitle = document.getElementById("pickerTitle");
+      if (!p1Btn || !p2Btn || !picker || !grid) return;
 
-      if (p1Btn) {
-        p1Btn.addEventListener("click", () => {
-          p1Idx = (p1Idx + 1) % CHARS_P1.length;
-          const char = CHARS_P1[p1Idx];
-          this.p1CharId = char.id;
-          p1Btn.querySelector(".fp-emoji").textContent = char.emoji;
-          p1Btn.querySelector("b").textContent = char.name;
-          p1Btn.querySelector("small").textContent = char.title + " ▾";
-          Sound.punch();
-        });
-      }
+      let pickFor = "p1";   // đang chọn tướng cho người chơi nào
 
-      if (p2Btn) {
-        p2Btn.addEventListener("click", () => {
-          p2Idx = (p2Idx + 1) % CHARS_P2.length;
-          const char = CHARS_P2[p2Idx];
-          this.p2CharId = char.id;
-          p2Btn.querySelector(".fp-emoji").textContent = char.emoji;
-          p2Btn.querySelector("b").textContent = char.name;
-          p2Btn.querySelector("small").textContent = char.title + " ▾";
-          Sound.punch();
-        });
-      }
+      const slotOf = who => who === "p1" ? p1Btn : p2Btn;
+      const paintSlot = (who) => {
+        const id = who === "p1" ? this.p1CharId : this.p2CharId;
+        const info = infoOf(id);
+        const el = slotOf(who);
+        el.querySelector(".fp-emoji").textContent = info.emoji;
+        el.querySelector("b").textContent = info.name;
+        el.querySelector("small").textContent = `${who.toUpperCase()}: ${info.title} ▾`;
+      };
+
+      const closePicker = () => picker.classList.add("hidden");
+
+      const openPicker = (who) => {
+        pickFor = who;
+        const curId = who === "p1" ? this.p1CharId : this.p2CharId;
+        pickerTitle.textContent = who === "p1" ? "CHỌN TƯỚNG — NGƯỜI CHƠI 1" : "CHỌN TƯỚNG — NGƯỜI CHƠI 2";
+        pickerTitle.className = who === "p1" ? "pick-h pick-p1" : "pick-h pick-p2";
+        grid.innerHTML = "";
+        for (const id of ROSTER) {
+          const info = CHAR_INFO[id];
+          const card = document.createElement("button");
+          card.className = "char-card" + (id === curId ? " sel" : "");
+          card.style.setProperty("--accent", info.aura);
+          card.innerHTML = `<span class="cc-emoji">${info.emoji}</span>` +
+                           `<b>${info.name}</b>` +
+                           `<small>${info.title}</small>` +
+                           `<em>${info.desc}</em>`;
+          card.addEventListener("click", () => {
+            if (pickFor === "p1") this.p1CharId = id; else this.p2CharId = id;
+            paintSlot(pickFor);
+            Sound.punch();
+            closePicker();
+          });
+          grid.appendChild(card);
+        }
+        picker.classList.remove("hidden");
+      };
+
+      p1Btn.addEventListener("click", () => { Sound.punch(); openPicker("p1"); });
+      p2Btn.addEventListener("click", () => { Sound.punch(); openPicker("p2"); });
+      const closeBtn = document.getElementById("pickerClose");
+      if (closeBtn) closeBtn.addEventListener("click", closePicker);
+      // Bấm ra nền tối hoặc ESC cũng đóng bảng chọn
+      picker.addEventListener("click", e => { if (e.target === picker) closePicker(); });
+      window.addEventListener("keydown", e => {
+        if (e.key === "Escape" && !picker.classList.contains("hidden")) closePicker();
+      });
+
+      paintSlot("p1");
+      paintSlot("p2");
     },
 
     show(id) { document.getElementById(id).classList.remove("hidden"); },
@@ -1402,6 +1527,7 @@
           target.takeHit(p.d.dmg, p.d.knockback, p.d.launch, dir, p.d.kind==="redhawk"||p.d.kind==="tatsumaki"||p.d.super, p.owner);
           p.owner.gainMeter(6);
           if (this.addAceInferno && p.d.kind === "hiken") this.addAceInferno(p.x, p.y);
+          if (this.addIceShatter && p.d.kind === "pheasant") this.addIceShatter(p.x, p.y);
           if (p.d.super) { this.flashScreen = 1.3; this.hitstop = Math.max(this.hitstop, 150); this.addHitSpark(p.x, p.y, false, true); }
           p.dead = true;
         }
@@ -1417,6 +1543,9 @@
     },
 
     separate() {
+      // Đi bài co-op: 2 người chơi là ĐỒNG ĐỘI -> cho đi xuyên qua nhau.
+      // Nếu vẫn đẩy như đối thủ 1v1 thì hai người kẹt cứng, không lách qua nhau được.
+      if (this.mode === "adventure") return;
       const a = this.luffy, b = this.zoro;
       const minDist = 44;
       const d = b.x - a.x;
@@ -1451,6 +1580,9 @@
         }
         if (this.addAceInferno && attacker.id === "ace" && (d.key === "kagerou" || d.key === "entei")) {
           this.addAceInferno(defender.x, defender.y - 70);
+        }
+        if (this.addIceShatter && attacker.id === "aokiji" && (d.key === "icetime" || d.key === "iceage")) {
+          this.addIceShatter(defender.x, defender.y - 70);
         }
 
         const dir = attacker.facing;
@@ -1518,7 +1650,16 @@
       this.luffy.draw();
       this.zoro.draw();
 
-      for (const p of this.projectiles) p.draw();
+      for (const p of this.projectiles) {
+        // Đạn tán xạ: xoay quanh chính nó theo hướng bay rồi mới gọi draw().
+        // Làm ở đây để mọi kiểu đạn (kể cả đạn riêng của từng nhân vật) tự động xoay đúng.
+        if (p.ang) {
+          ctx.save();
+          ctx.translate(p.x, p.y); ctx.rotate(p.ang * p.dir); ctx.translate(-p.x, -p.y);
+          p.draw();
+          ctx.restore();
+        } else p.draw();
+      }
       this.drawSparks();
 
       ctx.restore();
@@ -1882,7 +2023,7 @@
       if (f.hp > 0) {
         const hpW = barW * (f.hp / 100);
         const hpGrd = ctx.createLinearGradient(x, y, x + barW, y + barH);
-        if (f.id === "luffy") {
+        if (!right) {                       // P1 luôn đỏ, P2 luôn xanh — không phụ thuộc chọn tướng nào
           hpGrd.addColorStop(0, "#ffa07a"); // Light salmon
           hpGrd.addColorStop(0.3, "#ff4500"); // Orange-red
           hpGrd.addColorStop(1, "#b22222"); // Firebrick shadow

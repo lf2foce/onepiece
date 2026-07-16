@@ -20,7 +20,7 @@
           <div class="fp fp-p1" id="p1Select" style="cursor: pointer;" title="Nhấn để đổi nhân vật Player 1">
             <span class="fp-emoji">👒</span>
             <b>LUFFY</b>
-            <small>P1: Đổi tướng ▾</small>
+            <small>P1: Chọn tướng ▾</small>
           </div>
           <span class="vs">VS</span>
           <div class="fp fp-p2" id="p2Select" style="cursor: pointer;" title="Nhấn để đổi nhân vật Player 2">
@@ -46,9 +46,11 @@
               <li><kbd>A</kbd> <kbd>D</kbd> Di chuyển</li>
               <li><kbd>W</kbd> Nhảy · <kbd>S</kbd> Đỡ đòn</li>
               <li><kbd>F</kbd> Đấm Cao Su <span class="tag near">Cận</span></li>
+              <li><kbd>S</kbd> + <kbd>F</kbd> Rìu Cao Su <span class="tag spec">Cận nặng</span></li>
               <li><kbd>G</kbd> Gatling Cao Su <span class="tag far">Xa</span></li>
+              <li><kbd>S</kbd> + <kbd>G</kbd> Gomu Gomu no Storm <span class="tag ult">★ Siêu chiêu 3</span></li>
               <li><kbd>H</kbd> Red Hawk <span class="tag ult">★ Siêu chiêu 1</span></li>
-              <li><kbd>S</kbd> + <kbd>H</kbd> Rìu Cao Su · <b>King Kong Gun</b> khi FULL <span class="tag ult">★ Siêu chiêu 2</span></li>
+              <li><kbd>S</kbd> + <kbd>H</kbd> King Kong Gun <span class="tag ult">★ Siêu chiêu 2</span></li>
             </ul>
           </div>
           <div class="ctrl-col">
@@ -57,23 +59,49 @@
               <li><kbd>←</kbd> <kbd>→</kbd> Di chuyển</li>
               <li><kbd>↑</kbd> Nhảy · <kbd>↓</kbd> Đỡ đòn</li>
               <li><kbd>,</kbd> Chém Tam Đao <span class="tag near">Cận</span></li>
+              <li><kbd>↓</kbd> + <kbd>,</kbd> Kijin Ashura <span class="tag spec">Cận nặng</span></li>
               <li><kbd>.</kbd> 36 Pao Phách <span class="tag far">Xa</span></li>
+              <li><kbd>↓</kbd> + <kbd>.</kbd> 108 Pao Phách <span class="tag ult">★ Siêu chiêu 3</span></li>
               <li><kbd>/</kbd> Long Quyển Phong <span class="tag ult">★ Siêu chiêu 1</span></li>
-              <li><kbd>↓</kbd> + <kbd>/</kbd> Ashura · <b>Sanzen Sekai</b> khi FULL <span class="tag ult">★ Siêu chiêu 2</span></li>
+              <li><kbd>↓</kbd> + <kbd>/</kbd> Sanzen Sekai <span class="tag ult">★ Siêu chiêu 2</span></li>
             </ul>
           </div>
           <div class="ctrl-col">
             <h3>🔥 Ace — Hỏa Quyền (chọn cho P1 hoặc P2)</h3>
             <ul>
               <li>Phím <b>giống người chơi</b> đang chọn Ace</li>
-              <li><b>Cận</b> Fire Fist Jab — đấm bọc lửa <span class="tag near">Cận</span></li>
+              <li><b>Cận</b> Fire Fist Jab <span class="tag near">Cận</span></li>
+              <li><b>↓ + cận</b> Kagerou — sóng lửa ảo ảnh <span class="tag spec">Cận nặng</span></li>
               <li><b>Xa</b> Higan — loạt 5 đạn lửa <span class="tag far">Xa</span></li>
+              <li><b>↓ + xa</b> Hotarubi — đom đóm lửa <span class="tag ult">★ Siêu chiêu 3</span></li>
               <li><b>Skill</b> Hiken — nắm đấm lửa khổng lồ <span class="tag ult">★ Siêu chiêu 1</span></li>
-              <li><b>↓ + skill</b> Kagerou · <b>Dai Enkai: Entei</b> khi FULL <span class="tag ult">★ Siêu chiêu 2</span></li>
+              <li><b>↓ + skill</b> Dai Enkai: Entei <span class="tag ult">★ Siêu chiêu 2</span></li>
+            </ul>
+          </div>
+          <div class="ctrl-col">
+            <h3>❄️ Aokiji — Đô Đốc Băng (chọn cho P1 hoặc P2)</h3>
+            <ul>
+              <li>Phím <b>giống người chơi</b> đang chọn Aokiji</li>
+              <li><b>Cận</b> Ice Saber — kiếm băng <span class="tag near">Cận</span></li>
+              <li><b>↓ + cận</b> Ice Time — băng thời gian <span class="tag spec">Cận nặng</span></li>
+              <li><b>Xa</b> Ice Block: Partisan — loạt thương băng <span class="tag far">Xa</span></li>
+              <li><b>↓ + xa</b> Icicle Rain — mưa thương băng <span class="tag ult">★ Siêu chiêu 3</span></li>
+              <li><b>Skill</b> Pheasant Beak — chim băng khổng lồ <span class="tag ult">★ Siêu chiêu 1</span></li>
+              <li><b>↓ + skill</b> Ice Age — kỷ băng hà <span class="tag ult">★ Siêu chiêu 2</span></li>
             </ul>
           </div>
         </div>
-        <p class="hint">Đầy <b>HAKI</b> <b>100%</b> → <b style="color:#ffd23f">SIÊU CHIÊU</b> (khựng hình + sát thương x2). Mỗi nhân vật có <b>2 siêu chiêu</b>: bấm <b>skill</b> hoặc <b>↓ + skill</b>. Thắng 2 hiệp để chiến thắng.</p>
+        <p class="hint">Mỗi tướng có <b>6 ô chiêu</b>: 3 phím đòn (<b>cận · xa · skill</b>), thêm <b>↓</b> phía trước ra <b>phiên bản khác</b> của chính ô đó.<br />
+        Đầy <b>HAKI 100%</b> → chiêu tốn Haki lên bản <b style="color:#ffd23f">SIÊU CHIÊU</b> (khựng hình + sát thương x2). Mỗi tướng có <b>3 siêu chiêu</b>: <b>skill</b> · <b>↓ + skill</b> · <b>↓ + xa</b> (tán xạ nan quạt, FULL Haki thì nổ vòng tròn 360° quanh mình). Thắng 2 hiệp để chiến thắng.</p>
+      </div>
+    </div>
+
+    <!-- BẢNG CHỌN TƯỚNG (mở khi bấm vào ô đấu sĩ ở menu) -->
+    <div id="charPicker" class="overlay hidden">
+      <div class="picker-card">
+        <h2 id="pickerTitle" class="pick-h pick-p1">CHỌN TƯỚNG — NGƯỜI CHƠI 1</h2>
+        <div class="char-grid" id="charGrid"></div>
+        <button class="btn btn-ghost" id="pickerClose">Đóng</button>
       </div>
     </div>
 
@@ -95,6 +123,7 @@
   <script src="sanji.js"></script>
   <script src="shanks.js"></script>
   <script src="ace.js"></script>
+  <script src="aokiji.js"></script>
   <script src="game.js"></script>
   <script src="adventure.js"></script>
 </body>

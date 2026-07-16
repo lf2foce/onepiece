@@ -34,6 +34,12 @@
         multiHit: 130,                               // giã ~5 nhịp trong vùng bão
         reach:{dx:-150,dy:-215,w:330,h:255}, knockback:170, launch:-55,
         sfx:"special", cry:"Haoshoku Haki!", color:"#8a2be2" },
+      // 6. SIÊU CHIÊU 3 (↓+xa): quạt kiếm khí Haki chém toả ra nhiều hướng
+      hakoku: { key:"hakoku", name:"Hakoku Sovereignty — Bá Quốc", type:"projectile",
+        dmg:7, startup:220, active:0, recovery:400, meterCost:50, meterGain:0,
+        sfx:"slash", cry:"Hakoku Sovereignty!",
+        spread: { count: 7, arcDeg: 80, dmg: 7, speed: 640 },
+        proj:{ kind:"haki_wave", speed:640, w:48, h:88, dmg:7, knockback:210, launch:-55, life:1500, color:"#c77bff" } },
     };
 
     // Helper draw round rect

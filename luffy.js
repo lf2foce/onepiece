@@ -30,6 +30,12 @@
         dmg:20, startup:320, active:220, recovery:440, meterCost:100, meterGain:0,
         reach:{dx:18,dy:-190,w:430,h:250}, knockback:640, launch:-150,
         sfx:"punch", color:"#ff6b6b", cry:"King Kong Gun!" },
+      // SIÊU CHIÊU 3 (↓+xa) — nắm đấm cao su bắn toả nan quạt khắp mọi hướng
+      rain: { key:"rain", name:"Gomu Gomu no Storm", type:"projectile",
+        dmg:5, startup:200, active:0, recovery:400, meterCost:50, meterGain:0,
+        sfx:"punch", cry:"Gomu Gomu no Storm!",
+        spread: { count: 7, arcDeg: 78, dmg: 5, speed: 660 },
+        proj:{ kind:"gatling", speed:660, w:44, h:26, dmg:5, knockback:150, launch:-40, life:1400, color:"#ffcf9e" } },
     };
 
     // ---------------------------------------------------------------- Leg Swing Math for Axe Kick

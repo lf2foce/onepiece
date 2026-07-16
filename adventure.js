@@ -292,6 +292,7 @@
     const Game = window.OP_GAME;
     window.OP_SOUNDS = window.OP_SOUNDS || {};
 
+    const origStartMatch = Game.startMatch;
     Game.startMatch = function(mode) {
       if (mode === "adventure") {
         this.mode = mode;
@@ -343,18 +344,10 @@
         window.OP_SOUNDS.round && window.OP_SOUNDS.round();
         return;
       }
-      // Gọi gốc đối kháng 1v1 bình thường
-      this.mode = mode;
-      this.luffy.wins = 0; this.zoro.wins = 0;
-      this.round = 1;
-      this.ai = (mode === "1p" || mode === "sandbox") ? new window.OP_GAME.ai.constructor(this.zoro) : null;
-      if (mode === "sandbox") {
-        this.ai.decideTimer = 99999999;
-        this.ai.want = { left:false,right:false,jump:false,block:false,close:false,ranged:false,special:false };
-      }
-      this.hide("menu"); this.hide("result");
-      this.show("pauseHint");
-      this.startRound();
+      // Các chế độ 1v1 (1p / 2p / sandbox): gọi thẳng hàm gốc của game.js.
+      // Không tự dựng lại AI ở đây — class AI nằm trong scope riêng của game.js, còn Game.ai
+      // lúc ở menu vẫn là null nên đọc Game.ai.constructor sẽ văng lỗi và chết cả chế độ 1p/sandbox.
+      return origStartMatch.call(this, mode);
     };
 
     // Móc lách vào Game.update
