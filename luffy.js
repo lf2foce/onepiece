@@ -78,12 +78,14 @@
       const legs = this.legPose();
       // Nhịp thở phập phồng sinh động ở trạng thái đứng yên (idle) hoặc di chuyển (walk)
       const bob = this.state === "idle" ? Math.sin(this.animTime * 4.5) * 2.5 : (this.state === "walk" ? Math.abs(Math.sin(this.walkPhase)) * 3.5 : 0);
-      const skin    = flash ? "#ffc2ad" : "#f6cfa4";
-      const skinSh  = flash ? "#f0a48f" : "#e0ac7f";
-      const red     = flash ? "#ff7358" : "#e5342e";
-      const redSh   = flash ? "#d8503c" : "#a81f1a";
-      const blue    = flash ? "#5c93ef" : "#2f6fd8";
-      const blueSh  = flash ? "#3f6fc4" : "#1f4fa8";
+      // GEAR 5 (biến hình): tóc & áo hoá trắng toát, da sáng bệch, khói trắng bốc lên
+      const g5 = this.formed;
+      const skin    = g5 ? (flash ? "#ffffff" : "#fff1e2") : (flash ? "#ffc2ad" : "#f6cfa4");
+      const skinSh  = g5 ? (flash ? "#ffe4d0" : "#f2d9c4") : (flash ? "#f0a48f" : "#e0ac7f");
+      const red     = g5 ? (flash ? "#ffffff" : "#f7f7f7") : (flash ? "#ff7358" : "#e5342e");
+      const redSh   = g5 ? (flash ? "#e8e8e8" : "#d8d8d8") : (flash ? "#d8503c" : "#a81f1a");
+      const blue    = g5 ? (flash ? "#ffffff" : "#ececec") : (flash ? "#5c93ef" : "#2f6fd8");
+      const blueSh  = g5 ? (flash ? "#dcdcdc" : "#c4c4c4") : (flash ? "#3f6fc4" : "#1f4fa8");
 
       const ctx = document.getElementById("game").getContext("2d");
 
@@ -91,8 +93,8 @@
       ctx.translate(0, -bob);
       ctx.lineJoin = "round"; ctx.lineCap = "round";
 
-      // ---- HIỆU ỨNG GEAR 2 (Khói hồng bồng bềnh cuộn trào) ----
-      if (this.meter >= 100 || this.hp < 50) {
+      // ---- HIỆU ỨNG GEAR 2 (khói hồng) / GEAR 5 (khói TRẮNG toát) ----
+      if (this.meter >= 100 || this.hp < 50 || g5) {
         ctx.save();
         ctx.globalCompositeOperation = "screen";
         const anim = this.animTime * 7;
@@ -102,7 +104,8 @@
           const r = 6 + Math.sin(anim * 0.15 + i) * 3;
           const op = clamp(0.38 * (1 - steamY / 115), 0, 0.45);
           
-          ctx.fillStyle = i % 2 ? `rgba(255, 182, 193, ${op})` : `rgba(255, 255, 255, ${op * 0.8})`;
+          ctx.fillStyle = g5 ? `rgba(255, 255, 255, ${op * 1.5})`
+                            : (i % 2 ? `rgba(255, 182, 193, ${op})` : `rgba(255, 255, 255, ${op * 0.8})`);
           ctx.beginPath();
           ctx.arc(steamX, -steamY, r, 0, Math.PI * 2);
           ctx.arc(steamX - r * 0.6, -steamY + r * 0.3, r * 0.7, 0, Math.PI * 2);
@@ -332,8 +335,8 @@
       // Tai thon gọn
       ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(-11, -120, 2.5, 0, Math.PI * 2); ctx.fill();
 
-      // Mái tóc đen tỉa nhiều lớp nhọn cực ngầu
-      ctx.fillStyle = flash ? "#37323d" : "#181820";
+      // Mái tóc: đen thường ngày, TRẮNG TOÁT khi Gear 5
+      ctx.fillStyle = this.formed ? (flash ? "#ffffff" : "#fbfbfb") : (flash ? "#37323d" : "#181820");
       ctx.beginPath();
       ctx.moveTo(-12, -118);
       ctx.quadraticCurveTo(-14, -132, -6, -134);
@@ -401,6 +404,20 @@
         ctx.strokeStyle = "#7a2a2a"; ctx.lineWidth = 1.6;
         ctx.beginPath(); ctx.moveTo(-1, -113); ctx.quadraticCurveTo(5, -105, 11, -113);
         ctx.stroke();
+
+        // GEAR 5: nụ cười toe toét hết cỡ + viền mắt đen đặc trưng của Nika
+        if (this.formed) {
+          ctx.fillStyle = "#2a1010";
+          ctx.beginPath();
+          ctx.moveTo(-3, -114); ctx.quadraticCurveTo(5, -101, 12, -114);
+          ctx.quadraticCurveTo(5, -111, -3, -114); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.moveTo(-1, -113.4); ctx.quadraticCurveTo(5, -110.5, 10.5, -113.4);
+          ctx.lineTo(-1, -113.4); ctx.closePath(); ctx.fill();
+          ctx.strokeStyle = "#15151c"; ctx.lineWidth = 1.4;
+          ctx.beginPath(); ctx.arc(5, -121, 4.6, 0, Math.PI * 2); ctx.stroke();
+        }
       }
 
       ctx.strokeStyle = "#c05a49"; ctx.lineWidth = 2;

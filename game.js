@@ -14,7 +14,11 @@
   const GROUND = H - 78;    // cao độ mặt đất (chân đứng)
 
   // ---------------------------------------------------------------- Vật lý
-  const MAX_HP = 140;        // máu mỗi hiệp (sát thương chiêu giữ nguyên -> trận dài hơn, đỡ "một phát chết")
+  const MAX_HP = 140;
+  // BIẾN HÌNH (↓+skill khi có 50-99 Haki): mạnh hơn trong 14 giây rồi trở lại bình thường
+  const FORM_MS    = 14000;  // thời gian giữ hình dạng
+  const FORM_DMG   = 1.3;    // hệ số sát thương khi đã biến hình
+  const FORM_SPEED = 1.15;   // hệ số tốc độ chạy        // máu mỗi hiệp (sát thương chiêu giữ nguyên -> trận dài hơn, đỡ "một phát chết")
   const GRAVITY = 2200;      // px/s^2
   const MOVE_SPEED = 260;    // px/s
   const JUMP_V = -820;       // px/s
@@ -163,14 +167,22 @@
   // Danh sách tướng dùng chung cho HUD, aura và bảng chọn tướng ở sảnh chờ.
   // warm: tông màn khựng siêu chiêu (nóng = vàng/cam, nguội = xanh lá)
   const CHAR_INFO = {
-    luffy:  { name: "LUFFY",  emoji: "👒", aura: "#ffd23f", warm: true,  title: "Mũ Rơm",     desc: "Cao su · Gear 2" },
-    zoro:   { name: "ZORO",   emoji: "⚔️", aura: "#bfffdb", warm: false, title: "Tam Đao",    desc: "Kiếm sĩ · Ashura" },
-    sanji:  { name: "SANJI",  emoji: "🚬", aura: "#ff7f00", warm: true,  title: "Hắc Cước",   desc: "Chân lửa · Diable" },
-    shanks: { name: "SHANKS", emoji: "👑", aura: "#ff5a5a", warm: true,  title: "Tóc Đỏ",     desc: "Tứ Hoàng · Bá Vương" },
-    ace:    { name: "ACE",    emoji: "🔥", aura: "#ff8c00", warm: true,  title: "Hỏa Quyền",  desc: "Mera Mera · Hiken" },
-    aokiji: { name: "AOKIJI", emoji: "❄️", aura: "#7fdcff", warm: false, title: "Đô Đốc Băng", desc: "Hie Hie · Ice Age" },
-    sabo:   { name: "SABO",   emoji: "🎩", aura: "#ffb300", warm: true,  title: "Quân Cách Mạng", desc: "Long Trảo · Mera Mera" },
-    akainu: { name: "AKAINU", emoji: "🌋", aura: "#ff3300", warm: true,  title: "Đô Đốc Dung Nham", desc: "Magu Magu · Dai Funka" },
+    luffy:  { name: "LUFFY",  emoji: "👒", aura: "#ffd23f", warm: true,  title: "Mũ Rơm",     desc: "Cao su · Gear 2",
+              form: { name: "GEAR 5 — NIKA", cry: "Gear Five!", c1: "#ffffff", c2: "#ffe9a8" } },
+    zoro:   { name: "ZORO",   emoji: "⚔️", aura: "#bfffdb", warm: false, title: "Tam Đao",    desc: "Kiếm sĩ · Ashura",
+              form: { name: "ASURA — VUA ĐỊA NGỤC", cry: "Asura!", c1: "#c9a0ff", c2: "#3a1f66" } },
+    sanji:  { name: "SANJI",  emoji: "🚬", aura: "#ff7f00", warm: true,  title: "Hắc Cước",   desc: "Chân lửa · Diable",
+              form: { name: "RAID SUIT — GERMA 66", cry: "Germa Sixty Six!", c1: "#9fe0ff", c2: "#1f6fd8" } },
+    shanks: { name: "SHANKS", emoji: "👑", aura: "#ff5a5a", warm: true,  title: "Tóc Đỏ",     desc: "Tứ Hoàng · Bá Vương",
+              form: { name: "HAOSHOKU — BÁ VƯƠNG SẮC", cry: "Haoshoku Haki!", c1: "#ff4a4a", c2: "#1a1020" } },
+    ace:    { name: "ACE",    emoji: "🔥", aura: "#ff8c00", warm: true,  title: "Hỏa Quyền",  desc: "Mera Mera · Hiken",
+              form: { name: "ENKAI — TOÀN THÂN HOẢ", cry: "Enkai!", c1: "#9fe0ff", c2: "#ff7f00" } },
+    aokiji: { name: "AOKIJI", emoji: "❄️", aura: "#7fdcff", warm: false, title: "Đô Đốc Băng", desc: "Hie Hie · Ice Age",
+              form: { name: "HIE HIE — TOÀN THÂN BĂNG", cry: "Hie Hie no Mi!", c1: "#eaffff", c2: "#3aa0e6" } },
+    sabo:   { name: "SABO",   emoji: "🎩", aura: "#ffb300", warm: true,  title: "Quân Cách Mạng", desc: "Long Trảo · Mera Mera",
+              form: { name: "RYUSOKEN — LONG HOÁ", cry: "Ryusoken!", c1: "#ffe066", c2: "#ff5a1a" } },
+    akainu: { name: "AKAINU", emoji: "🌋", aura: "#ff3300", warm: true,  title: "Đô Đốc Dung Nham", desc: "Magu Magu · Dai Funka",
+              form: { name: "MAGU MAGU — TOÀN THÂN DUNG NHAM", cry: "Magu Magu no Mi!", c1: "#ffb300", c2: "#8b1a00" } },
   };
   const ROSTER = ["luffy", "zoro", "sanji", "shanks", "ace", "aokiji", "sabo", "akainu"];
   const infoOf = id => CHAR_INFO[id] || CHAR_INFO.zoro;
@@ -454,6 +466,7 @@
       this.facing = facing;         // 1 phải, -1 trái
       this.onGround = true;
       this.hp = MAX_HP;
+      this.formT = 0;               // ms còn lại của trạng thái biến hình
       this.meter = 0;               // Haki 0..100
       this.state = "idle";          // idle|walk|jump|block|attack|hurt|ko
       this.attack = null;           // {def, elapsed, phase, hit:Set, spawned}
@@ -477,13 +490,16 @@
     reset(x, facing) {
       this.x = x; this.y = GROUND; this.vx = 0; this.vy = 0;
       this.facing = facing; this.onGround = true;
-      this.hp = MAX_HP; this.meter = Math.min(this.meter, 30);
+      this.hp = MAX_HP; this.meter = Math.min(this.meter, 30); this.formT = 0;
       this.state = "idle"; this.attack = null; this.hurtTimer = 0;
       this.blocking = false; this.flash = 0;
       this.combo = 0; this.comboTimer = 0; this.comboPop = 0;
     }
 
     canAct() { return this.state !== "attack" && this.state !== "hurt" && this.state !== "ko"; }
+
+    get formed() { return this.formT > 0; }           // đang ở dạng biến hình?
+    get dmgScale() { return this.formed ? FORM_DMG : 1; }
 
     gainMeter(n) { this.meter = clamp(this.meter + n, 0, 100); }
 
@@ -493,7 +509,7 @@
       if (!def) return;
       // SUPER: chiêu nào TỐN Haki thì đầy 100% sẽ ra bản super (khựng hình + sát thương x2).
       // Đòn thường/đòn nặng miễn phí thì không có bản super.
-      const canSuper = !!def.meterCost;
+      const canSuper = !!def.meterCost && !def.transform;
       const isSuper = canSuper && this.meter >= 100;
       if (!isSuper && def.meterCost && this.meter < def.meterCost) return; // chưa đủ Haki
       if (isSuper) this.meter -= 100;
@@ -599,6 +615,12 @@
         this.facing = opp.x >= this.x ? 1 : -1;
       }
 
+      // ------ đếm ngược biến hình ------
+      if (this.formT > 0) {
+        this.formT -= dt * 1000;
+        if (this.formT <= 0) { this.formT = 0; Game.addFormPop(this, false); }
+      }
+
       // ------ trạng thái hurt ------
       if (this.state === "hurt") {
         this.hurtTimer -= dt * 1000;
@@ -622,7 +644,7 @@
           let move = 0;
           if (intents.left) move -= 1;
           if (intents.right) move += 1;
-          this.vx = move * MOVE_SPEED;
+          this.vx = move * MOVE_SPEED * (this.formed ? FORM_SPEED : 1);
           if (this.onGround) this.state = move !== 0 ? "walk" : "idle";
 
           // nhảy
@@ -637,7 +659,9 @@
           const fire = (slot) => {
             // Giữ ↓ -> lấy biến thể của ô đó. Nếu tướng chưa có biến thể (hoặc file chiêu chưa nạp)
             // thì rơi về đòn gốc, để phím không bị "bấm mà không ra gì".
-            const variant = intents.block ? dm[slot] : null;
+            let variant = intents.block ? dm[slot] : null;
+            // ↓+skill mà chưa đủ 100 Haki thì trước đây bấm không ra gì -> nay là BIẾN HÌNH (tốn 50)
+            if (intents.block && slot === "special" && this.meter < 100 && this.moves.transform) variant = "transform";
             const key = (variant && this.moves[variant]) ? variant : slot;
             this.startAttack(key);
             if (this.state !== "attack") return;
@@ -699,7 +723,7 @@
                 const ang = full ? (i / n) * Math.PI * 2
                                  : (n === 1 ? 0 : -arc / 2 + arc * (i / (n - 1)));
                 const pdef = Object.assign({}, d.proj, {
-                  dmg: Math.round((sp.dmg || d.proj.dmg) * (sup ? 2.1 : 1)),
+                  dmg: Math.round((sp.dmg || d.proj.dmg) * (sup ? 2.1 : 1) * this.dmgScale),
                   knockback: d.proj.knockback * (sup ? 1.5 : 1),
                   launch: (d.proj.launch || 0) * (sup ? 1.25 : 1),
                   w: d.proj.w * scale, h: d.proj.h * scale,
@@ -724,7 +748,7 @@
                 speed: d.multiProj.speed,
                 w: d.proj.w,
                 h: d.proj.h,
-                dmg: isLast ? d.multiProj.dmg + 2 : d.multiProj.dmg,
+                dmg: Math.round((isLast ? d.multiProj.dmg + 2 : d.multiProj.dmg) * this.dmgScale),
                 knockback: isLast ? d.proj.knockback * 2.2 : d.proj.knockback,
                 launch: isLast ? d.proj.launch * 1.8 : d.proj.launch,
                 life: d.proj.life,
@@ -741,13 +765,14 @@
           } else if (!a.spawned) {
             a.spawned = true;
             let pdef = d.proj;
+            if (this.formed) pdef = Object.assign({}, pdef, { dmg: Math.round(pdef.dmg * FORM_DMG) });
             if (a.isSuper) {
-              pdef = Object.assign({}, d.proj, {
-                dmg: Math.round(d.proj.dmg * 2.1),
-                knockback: d.proj.knockback * 1.5,
-                launch: (d.proj.launch || 0) * 1.25,
-                w: d.proj.w * 1.6, h: d.proj.h * 1.6,
-                life: d.proj.life + 500,
+              pdef = Object.assign({}, pdef, {
+                dmg: Math.round(pdef.dmg * 2.1),
+                knockback: pdef.knockback * 1.5,
+                launch: (pdef.launch || 0) * 1.25,
+                w: pdef.w * 1.6, h: pdef.h * 1.6,
+                life: pdef.life + 500,
                 super: true,
               });
             }
@@ -755,6 +780,18 @@
             this.gainMeter(d.meterGain || 0);
             if (d.sfx === "special") Sound.special();
           }
+        }
+
+        // BIẾN HÌNH: hết pha vào đòn thì bật trạng thái, hô tên hình dạng
+        if (d.transform && a.elapsed >= sEnd && !a.formed) {
+          a.formed = true;
+          this.formT = FORM_MS;
+          Voice.say(d.cry || d.name);
+          Sound.superFlash();
+          Game.flashScreen = 1.1;
+          Game.hitstop = Math.max(Game.hitstop, 90);
+          Game.addFormPop(this, true);
+          Game.announce = { text: d.name, sub: "★ BIẾN HÌNH ★", t: 1300 };
         }
 
         // SKY WALK + BỔ NHÀO (vd Ifrit Jambe của Sanji): nhảy từng bậc lên không trung,
@@ -791,7 +828,7 @@
             if (p >= 0.9 && !a.hit.has(opp) && opp.state !== "ko") {
               a.hit.add(opp);
               const sup = a.isSuper;
-              opp.takeHit(sup ? Math.round(d.dmg * 2.1) : d.dmg,
+              opp.takeHit(Math.round((sup ? d.dmg * 2.1 : d.dmg) * this.dmgScale),
                           sup ? d.knockback * 1.5 : d.knockback,
                           sup ? (d.launch || 0) * 1.3 : d.launch,
                           this.facing, sup, this);
@@ -872,6 +909,7 @@
       if (this.state === "ko") return;
       const f = this;
       const isSpecialAttack = f.state === "attack" && f.attack && f.attack.def.key === "special";
+      if (f.formed) this.drawFormAura();
       if (f.meter < 50 && !isSpecialAttack) return;
 
       ctx.save();
@@ -1001,6 +1039,47 @@
       return { a:-0.26, b:0.28 };   // thế tấn dạng chân, khuỵu gối, bám đất vững
     }
 
+    // Hào quang khi đã biến hình: cột sáng bốc lên + vòng năng lượng dưới chân,
+    // màu lấy theo form riêng của từng tướng (CHAR_INFO.form).
+    drawFormAura() {
+      const f = this;
+      const info = Game.charInfo(f.id);
+      const fc = info.form || { c1: "#ffffff", c2: info.aura };
+      const anim = f.animTime * 10;
+      const fade = f.formT < 2200 ? Math.abs(Math.sin(f.formT / 130)) : 1;   // sắp hết giờ thì nhấp nháy
+
+      ctx.save();
+      ctx.translate(f.x, f.y);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = 0.85 * fade;
+
+      // Vòng năng lượng xoay dưới chân
+      ctx.strokeStyle = fc.c1; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.ellipse(0, -6, 40 + Math.sin(anim * 0.4) * 5, 12, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = fc.c2; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(0, -6, 52 + Math.cos(anim * 0.4) * 5, 15, 0, 0, Math.PI * 2); ctx.stroke();
+
+      // Cột sáng bốc lên bao quanh thân
+      const col = ctx.createLinearGradient(0, 0, 0, -150);
+      col.addColorStop(0, fc.c2 + "00");
+      col.addColorStop(0.35, fc.c2);
+      col.addColorStop(1, fc.c1 + "00");
+      ctx.globalAlpha = 0.28 * fade;
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.ellipse(0, -70, 34, 82, 0, 0, Math.PI * 2); ctx.fill();
+
+      // Hạt năng lượng bay ngược lên
+      ctx.globalAlpha = 0.9 * fade;
+      for (let i = 0; i < 7; i++) {
+        const py = -((anim * 22 + i * 26) % 165);
+        const px = Math.sin(anim * 0.5 + i * 1.7) * 30;
+        const r = 2 + Math.abs(Math.sin(anim * 0.3 + i)) * 2.4;
+        ctx.fillStyle = i % 2 ? fc.c1 : fc.c2;
+        ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+
     // ---- Helper dùng chung: hai chân + giày ----
     drawLegs(cfg, legs) {
       const one = (hipX, ang, back) => {
@@ -1091,6 +1170,19 @@
     if (window.AokijiInit) window.AokijiInit(Fighter, MOVES);
     if (window.SaboInit) window.SaboInit(Fighter, MOVES);
     if (window.AkainuInit) window.AkainuInit(Fighter, MOVES);
+
+    // Ô ↓+skill khi mới có 50-99 Haki: BIẾN HÌNH. Dựng chung một chiêu cho mọi tướng,
+    // tên/tiếng hô lấy từ CHAR_INFO.form của từng người.
+    for (const id of ROSTER) {
+      const info = CHAR_INFO[id];
+      if (!MOVES[id] || !info || !info.form) continue;
+      MOVES[id].transform = {
+        key: "transform", name: info.form.name, type: "buff",
+        dmg: 0, startup: 260, active: 140, recovery: 220,
+        meterCost: 50, meterGain: 0, transform: true,
+        sfx: "special", cry: info.form.cry,
+      };
+    }
   }
 
   // helper vẽ chữ nhật bo góc
@@ -1351,6 +1443,33 @@
       });
     },
 
+    // Bung hào quang lúc biến hình (on=true) và lúc hết giờ trở lại bình thường (on=false)
+    addFormPop(f, on) {
+      const info = infoOf(f.id);
+      const fc = info.form || { c1: "#ffffff", c2: info.aura };
+      const y = f.y - 70;
+      this.sparks.push({
+        kind: "ring", x: f.x, y, vx: 0, vy: 0,
+        life: on ? 460 : 300, life0: on ? 460 : 300,
+        r: 10, rMax: on ? 175 : 90, color: fc.c1,
+      });
+      if (on) this.sparks.push({ kind:"ring", x:f.x, y, vx:0, vy:0, life:340, life0:340, r:10, rMax:120, color: fc.c2 });
+      const n = on ? 26 : 10;
+      for (let i = 0; i < n; i++) {
+        const angle = (i / n) * Math.PI * 2 + Math.random() * 0.4;
+        const spd = (on ? 210 : 110) + Math.random() * (on ? 260 : 120);
+        this.sparks.push({
+          kind: "dot", x: f.x, y,
+          vx: Math.cos(angle) * spd, vy: Math.sin(angle) * spd - 120,
+          life: 380 + Math.random() * 300,
+          color: Math.random() < 0.5 ? fc.c1 : fc.c2,
+          r: 2 + Math.random() * 4,
+        });
+      }
+    },
+
+    charInfo(id) { return infoOf(id); },
+
     addTrail(x, y, c1, c2) {
       this.sparks.push({
         kind: "dot", x, y,
@@ -1599,7 +1718,7 @@
 
         const dir = attacker.facing;
         const sup = attacker.attack.isSuper;
-        const dmg    = sup ? Math.round(d.dmg * 2.1) : d.dmg;
+        const dmg    = Math.round((sup ? d.dmg * 2.1 : d.dmg) * attacker.dmgScale);
         const kb     = sup ? d.knockback * 1.5 : d.knockback;
         const launch = sup ? (d.launch || 0) * 1.3 : d.launch;
         defender.takeHit(dmg, kb, launch, dir, sup, attacker);   // sup -> flash + stun mạnh
@@ -2130,6 +2249,21 @@
         ctx.textAlign = right ? "right" : "left";
         const labelX = right ? x + barW - 10 : x + 10;
         ctx.fillText("HAKI READY!", labelX, mY + mH + 3);
+      }
+
+      // Đang biến hình: hiện tên hình dạng + đồng hồ đếm ngược cho biết còn mấy giây
+      if (f.formed) {
+        const info = infoOf(f.id);
+        const fc = info.form || { c1: "#fff" };
+        const labelX = right ? x + barW - 10 : x + 10;
+        ctx.textAlign = right ? "right" : "left";
+        ctx.textBaseline = "top";
+        ctx.font = "900 10px Arial, sans-serif";
+        ctx.fillStyle = fc.c1;
+        ctx.strokeStyle = "rgba(0,0,0,.65)"; ctx.lineWidth = 3;
+        const txt = `⚡ ${(info.form ? info.form.name : "BIẾN HÌNH")} · ${(f.formT / 1000).toFixed(1)}s`;
+        ctx.strokeText(txt, labelX, mY + mH + 16);
+        ctx.fillText(txt, labelX, mY + mH + 16);
       }
     },
 

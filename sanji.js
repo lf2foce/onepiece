@@ -69,8 +69,10 @@
       const bob = this.state === "idle" ? Math.sin(this.animTime * 4.5) * 2.5 : (this.state === "walk" ? Math.abs(Math.sin(this.walkPhase)) * 3.5 : 0);
       const skin    = flash ? "#ffc2ad" : "#f6cfa4";
       const skinSh  = flash ? "#f0a48f" : "#e0ac7f";
-      const suitCol = flash ? "#3a3d47" : "#1a1a24"; // Bộ comple đen
-      const shirtCol = flash ? "#ffeed0" : "#305080"; // Áo sơ mi xanh dương bên trong
+      // RAID SUIT GERMA 66 (biến hình): comple hoá giáp xanh điện, sơ mi phát sáng
+      const raid = this.formed;
+      const suitCol = raid ? (flash ? "#4a9fe8" : "#123a6b") : (flash ? "#3a3d47" : "#1a1a24"); // Bộ comple đen
+      const shirtCol = raid ? (flash ? "#eaffff" : "#9fe0ff") : (flash ? "#ffeed0" : "#305080"); // Áo sơ mi xanh dương bên trong
 
       const ctx = document.getElementById("game").getContext("2d");
 
@@ -102,7 +104,7 @@
         ctx.translate(0, -62 - spinLift); ctx.rotate(spinAng); ctx.translate(0, 62);
       }
       const isIfrit = atkKey === "ifrit";                       // lửa XANH (siêu chiêu 2)
-      const isDiable = this.meter >= 100 || atkKey === "special" || isIfrit;
+      const isDiable = this.formed || this.meter >= 100 || atkKey === "special" || isIfrit;
       if (isDiable) {
         ctx.save();
         ctx.globalCompositeOperation = "screen";

@@ -61,14 +61,16 @@
       const bob = this.state === "idle" ? Math.sin(this.animTime * 4.5) * 2.5 : (this.state === "walk" ? Math.abs(Math.sin(this.walkPhase)) * 3.5 : 0);
       const skin   = flash ? "#ffc2ad" : "#f6cfa4";
       const skinSh = flash ? "#f0a48f" : "#e0ac7f";
-      const shortCol = flash ? "#3a3d47" : "#15151b";   // Quần short đen
-      const beltCol  = flash ? "#ffd9a0" : "#e8912a";   // Thắt lưng cam có khóa chữ A
+      // ENKAI (biến hình): lửa cháy tới hạn, chuyển XANH TRẮNG nóng hơn cả lửa cam
+      const enkai = this.formed;
+      const shortCol = enkai ? (flash ? "#4a7fa8" : "#0d2a3d") : (flash ? "#3a3d47" : "#15151b");   // Quần short đen
+      const beltCol  = enkai ? (flash ? "#dff6ff" : "#3aa0ff") : (flash ? "#ffd9a0" : "#e8912a");   // Thắt lưng cam có khóa chữ A
 
       const ctx = document.getElementById("game").getContext("2d");
       const attacking = this.state === "attack" && this.attack;
       const atkKey = attacking ? this.attack.def.key : null;
       // Logia hoá lửa: khi đầy Haki hoặc đang tung chiêu lửa lớn
-      const isBlaze = this.meter >= 100 || atkKey === "special" || atkKey === "entei" || atkKey === "kagerou";
+      const isBlaze = this.formed || this.meter >= 100 || atkKey === "special" || atkKey === "entei" || atkKey === "kagerou";
 
       ctx.save();
       ctx.translate(0, -bob);
@@ -84,8 +86,9 @@
           const fx = Math.sin(anim * 0.35 + i * 1.9) * 21;
           const r = 5 + Math.sin(anim * 0.3 + i) * 3.2;
           const op = clamp(0.5 * (1 + fy / 125), 0, 0.55);
-          ctx.fillStyle = i % 3 === 0 ? `rgba(255, 215, 0, ${op})`
-                        : (i % 3 === 1 ? `rgba(255, 87, 34, ${op})` : `rgba(255, 140, 0, ${op * 0.9})`);
+          ctx.fillStyle = enkai ? (i % 2 ? `rgba(159, 224, 255, ${op * 1.2})` : `rgba(255, 255, 255, ${op})`)
+                        : (i % 3 === 0 ? `rgba(255, 215, 0, ${op})`
+                        : (i % 3 === 1 ? `rgba(255, 87, 34, ${op})` : `rgba(255, 140, 0, ${op * 0.9})`));
           ctx.beginPath();
           ctx.moveTo(fx, fy + r * 1.6);
           ctx.quadraticCurveTo(fx - r, fy, fx, fy - r * 1.8);

@@ -59,14 +59,16 @@
       const bob = this.state === "idle" ? Math.sin(this.animTime * 4.5) * 2.5 : (this.state === "walk" ? Math.abs(Math.sin(this.walkPhase)) * 3.5 : 0);
       const skin   = flash ? "#ffc2ad" : "#f6cfa4";
       const skinSh = flash ? "#f0a48f" : "#e0ac7f";
-      const coat   = flash ? "#5b8fd4" : "#1f4a86";   // Áo đuôi tôm xanh dương
+      // RYUSOKEN LONG HOÁ (biến hình): áo đuôi tôm cháy rực vàng cam như vảy rồng
+      const dragon = this.formed;
+      const coat   = dragon ? (flash ? "#ffd24a" : "#b34a00") : (flash ? "#5b8fd4" : "#1f4a86");   // Áo đuôi tôm xanh dương
       const coatSh = flash ? "#3f6fb0" : "#143259";
       const pants  = flash ? "#4a4a58" : "#1a1a22";
 
       const ctx = document.getElementById("game").getContext("2d");
       const attacking = this.state === "attack" && this.attack;
       const atkKey = attacking ? this.attack.def.key : null;
-      const isBlaze = this.meter >= 100 || atkKey === "special" || atkKey === "hiryuo" || atkKey === "kagizume" || atkKey === "clawrain";
+      const isBlaze = this.formed || this.meter >= 100 || atkKey === "special" || atkKey === "hiryuo" || atkKey === "kagizume" || atkKey === "clawrain";
 
       ctx.save();
       ctx.translate(0, -bob);

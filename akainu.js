@@ -57,15 +57,17 @@
       const swing = this.armSwing();
       const legs = this.legPose();
       const bob = this.state === "idle" ? Math.sin(this.animTime * 4.5) * 2.5 : (this.state === "walk" ? Math.abs(Math.sin(this.walkPhase)) * 3.5 : 0);
-      const skin   = flash ? "#ffc2ad" : "#e8b78d";
-      const skinSh = flash ? "#f0a48f" : "#c9925f";
+      // MAGU MAGU (biến hình): da hoá nham thạch đen sì, khe nứt đỏ rực
+      const lava = this.formed;
+      const skin   = lava ? (flash ? "#ff8a3a" : "#4a1e12") : (flash ? "#ffc2ad" : "#e8b78d");
+      const skinSh = lava ? (flash ? "#ff5a20" : "#2a0e08") : (flash ? "#f0a48f" : "#c9925f");
       const suit   = flash ? "#6a3030" : "#3a1414";   // Bộ vest đỏ sẫm
       const coat   = flash ? "#ffffff" : "#eceff3";   // Áo choàng Hải Quân khoác vai
 
       const ctx = document.getElementById("game").getContext("2d");
       const attacking = this.state === "attack" && this.attack;
       const atkKey = attacking ? this.attack.def.key : null;
-      const isMagma = this.meter >= 100 || atkKey === "special" || atkKey === "inugami" || atkKey === "meigo" || atkKey === "ryusei";
+      const isMagma = this.formed || this.meter >= 100 || atkKey === "special" || atkKey === "inugami" || atkKey === "meigo" || atkKey === "ryusei";
 
       ctx.save();
       ctx.translate(0, -bob);

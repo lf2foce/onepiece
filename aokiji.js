@@ -58,8 +58,10 @@
       const swing = this.armSwing();
       const legs = this.legPose();
       const bob = this.state === "idle" ? Math.sin(this.animTime * 4.5) * 2.5 : (this.state === "walk" ? Math.abs(Math.sin(this.walkPhase)) * 3.5 : 0);
-      const skin   = flash ? "#ffc2ad" : "#e8b78d";
-      const skinSh = flash ? "#f0a48f" : "#c9925f";
+      // HIE HIE (biến hình): toàn thân hoá băng, da trong veo xanh nhạt
+      const iceBody = this.formed;
+      const skin   = iceBody ? (flash ? "#ffffff" : "#dff6ff") : (flash ? "#ffc2ad" : "#e8b78d");
+      const skinSh = iceBody ? (flash ? "#bfeaff" : "#8fd4f0") : (flash ? "#f0a48f" : "#c9925f");
       const pants  = flash ? "#4a5a80" : "#232c46";   // Quần âu xanh navy
       const shirt  = flash ? "#ffffff" : "#efe6cf";   // Áo sơ mi kem
       const coat   = flash ? "#ffffff" : "#e9edf5";   // Áo choàng Hải Quân khoác hờ
@@ -68,7 +70,7 @@
       const attacking = this.state === "attack" && this.attack;
       const atkKey = attacking ? this.attack.def.key : null;
       // Logia hoá băng: khi đầy Haki hoặc đang tung chiêu băng lớn
-      const isFrost = this.meter >= 100 || atkKey === "special" || atkKey === "iceage" || atkKey === "icetime";
+      const isFrost = this.formed || this.meter >= 100 || atkKey === "special" || atkKey === "iceage" || atkKey === "icetime";
 
       ctx.save();
       ctx.translate(0, -bob);

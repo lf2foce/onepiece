@@ -56,8 +56,10 @@
       const legs = this.legPose();
       // Nhịp thở phập phồng sinh động ở trạng thái đứng yên (idle) hoặc di chuyển (walk)
       const bob = this.state === "idle" ? Math.sin(this.animTime * 4.5) * 2.5 : (this.state === "walk" ? Math.abs(Math.sin(this.walkPhase)) * 3.5 : 0);
-      const skin    = flash ? "#ffc2ad" : "#f0c49a";
-      const skinSh  = flash ? "#f0a48f" : "#d9a877";
+      // ASURA (biến hình): da tái xám như quỷ, sát khí tím đen bốc lên
+      const asura = this.formed;
+      const skin    = asura ? (flash ? "#e8dcff" : "#cbb9e8") : (flash ? "#ffc2ad" : "#f0c49a");
+      const skinSh  = asura ? (flash ? "#c9b0e8" : "#9c85c4") : (flash ? "#f0a48f" : "#d9a877");
       const white   = flash ? "#ffffff" : "#f2f2ea";
       const whiteSh = flash ? "#e6e6dc" : "#d0d0c4";
       const green   = flash ? "#59d488" : "#2ea15a";

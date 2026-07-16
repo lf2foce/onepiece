@@ -62,8 +62,10 @@
       const bob = this.state === "idle" ? Math.sin(this.animTime * 4.5) * 2.5 : (this.state === "walk" ? Math.abs(Math.sin(this.walkPhase)) * 3.5 : 0);
       const skin    = flash ? "#ffc2ad" : "#f6cfa4";
       const skinSh  = flash ? "#f0a48f" : "#e0ac7f";
-      const cloakCol = flash ? "#3a3d47" : "#121216"; // Áo choàng đen khoác hờ sau vai
-      const shirtCol = flash ? "#ffffff" : "#f2f2f0"; // Áo sơ mi trắng phanh ngực
+      // HAOSHOKU (biến hình): Haki Bá Vương đỏ đen phủ kín áo choàng
+      const hao = this.formed;
+      const cloakCol = hao ? (flash ? "#6a1020" : "#1a0308") : (flash ? "#3a3d47" : "#121216"); // Áo choàng đen khoác hờ sau vai
+      const shirtCol = hao ? (flash ? "#ffd0d0" : "#e8bcbc") : (flash ? "#ffffff" : "#f2f2f0"); // Áo sơ mi trắng phanh ngực
 
       const ctx = document.getElementById("game").getContext("2d");
 
