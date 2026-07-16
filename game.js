@@ -83,6 +83,7 @@
       jump:  () => tone(300, 0.12, "sine", 0.1, 620),
       ko:    () => tone(500, 0.6, "triangle", 0.2, 60),
       round: () => tone(660, 0.25, "square", 0.14, 990),
+      superFlash: () => { tone(140, 0.55, "sawtooth", 0.2, 1100); tone(70, 0.7, "square", 0.16, 320); noise(0.35, 0.16); },
     };
   })();
 
@@ -129,6 +130,28 @@
       ctx.translate(this.x, this.y);
       if (this.dir < 0) ctx.scale(-1, 1);
       const spin = this.t / 90;
+
+      // Quầng sáng cho đạn SUPER (full Haki)
+      if (this.d.super) {
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        const gr = this.w * 1.5;
+        const g = ctx.createRadialGradient(0, 0, 4, 0, 0, gr);
+        const warm = this.owner && this.owner.id === "luffy";
+        g.addColorStop(0, "rgba(255,255,255,0.9)");
+        g.addColorStop(0.4, warm ? "rgba(255,150,60,0.55)" : "rgba(80,255,160,0.55)");
+        g.addColorStop(1, warm ? "rgba(255,90,40,0)" : "rgba(40,220,120,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(0, 0, gr, 0, Math.PI * 2); ctx.fill();
+        // vảy sáng lấp lánh
+        ctx.fillStyle = "rgba(255,255,255,0.8)";
+        for (let i = 0; i < 4; i++) {
+          const a = spin * 1.4 + i * Math.PI / 2;
+          ctx.beginPath(); ctx.arc(Math.cos(a) * this.w * 0.7, Math.sin(a) * this.h * 0.4, 2.5, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore();
+        ctx.scale(1.15, 1.15);   // đạn to hơn chút cho oách
+      }
 
       if (kind === "gum") {
         // Nắm đấm cao su + tay kéo dài bọc ống tay áo đỏ
@@ -299,10 +322,13 @@
       const def = this.moves[kind];
       if (!def) return;
       if (def.meterCost && this.meter < def.meterCost) return; // chưa đủ Haki
-      if (def.meterCost) this.meter -= def.meterCost;
+      // SUPER: chỉ khi bình Haki ĐẦY 100% + tung tuyệt chiêu -> đòn mạnh + khựng điện ảnh
+      const isSuper = (kind === "special") && this.meter >= 100;
+      if (def.meterCost) this.meter -= (isSuper ? 100 : def.meterCost);
       this.state = "attack";
-      this.attack = { def, elapsed:0, phase:"startup", hit:new Set(), spawned:false };
+      this.attack = { def, elapsed:0, phase:"startup", hit:new Set(), spawned:false, isSuper };
       this.vx *= 0.2;
+      if (isSuper) Game.triggerSuper(this);
     }
 
     takeHit(dmg, kb, launch, fromDir, isSpecial, attacker) {
@@ -462,7 +488,18 @@
             }
           } else if (!a.spawned) {
             a.spawned = true;
-            Game.projectiles.push(new Projectile(this, d.proj));
+            let pdef = d.proj;
+            if (a.isSuper) {
+              pdef = Object.assign({}, d.proj, {
+                dmg: Math.round(d.proj.dmg * 2.1),
+                knockback: d.proj.knockback * 1.5,
+                launch: (d.proj.launch || 0) * 1.25,
+                w: d.proj.w * 1.6, h: d.proj.h * 1.6,
+                life: d.proj.life + 500,
+                super: true,
+              });
+            }
+            Game.projectiles.push(new Projectile(this, pdef));
             this.gainMeter(d.meterGain || 0);
             if (d.sfx === "special") Sound.special();
           }
@@ -823,6 +860,9 @@
     timeLeft: 60,
     hitstop: 0,          // ms đóng băng khi trúng đòn
     flashScreen: 0,      // 0..1 chớp trắng cho tuyệt chiêu
+    superFreeze: 0,      // ms khựng điện ảnh khi tung super (full Haki)
+    superDur: 640,
+    superFocus: null,    // {x, y, id, name}
     announce: null,      // {text, t}
     lastPressAttack: { p1:{}, p2:{} },
 
@@ -865,10 +905,18 @@
       this.projectiles = [];
       this.sparks = [];
       this.hitstop = 0; this.flashScreen = 0;
+      this.superFreeze = 0; this.superFocus = null;
       this.timeLeft = this.roundTime;
       this.state = "playing";
       this.announce = { text: `HIỆP ${this.round}`, sub:"CHIẾN ĐẤU!", t: 1600 };
       Sound.round();
+    },
+
+    // Kích hoạt SUPER: khựng hình điện ảnh + luồng sáng hội tụ (Street Fighter style)
+    triggerSuper(fighter) {
+      this.superFreeze = this.superDur;
+      this.superFocus = { x: fighter.x, y: fighter.y, id: fighter.id, name: fighter.moves.special.name };
+      Sound.superFlash();
     },
 
     toMenu() {
@@ -944,6 +992,12 @@
 
     update(dt) {
       if (this.demoFreeze) return;   // chỉ dùng khi chụp ảnh minh hoạ
+      // SUPER FREEZE: đóng băng điện ảnh khi tung super (full Haki)
+      if (this.state === "playing" && this.superFreeze > 0) {
+        this.superFreeze -= dt * 1000;
+        if (this.superFreeze <= 0) { this.superFreeze = 0; this.flashScreen = 0.7; }
+        return;
+      }
       // HITSTOP: đóng băng toàn bộ vài chục ms để cú đánh dội lại
       if (this.state === "playing" && this.hitstop > 0) {
         this.hitstop -= dt * 1000;
@@ -996,6 +1050,7 @@
           const dir = Math.sign(p.vx) || target.facing*-1;
           target.takeHit(p.d.dmg, p.d.knockback, p.d.launch, dir, p.d.kind==="redhawk"||p.d.kind==="tatsumaki", p.owner);
           p.owner.gainMeter(6);
+          if (p.d.super) { this.flashScreen = 1.3; this.hitstop = Math.max(this.hitstop, 150); this.addHitSpark(p.x, p.y, false, true); }
           p.dead = true;
         }
       }
@@ -1102,6 +1157,9 @@
         ctx.fillStyle = `rgba(255,255,255,${clamp(this.flashScreen, 0, 1) * 0.45})`;
         ctx.fillRect(0, 0, W, H);
       }
+
+      // màn khựng điện ảnh SUPER
+      if (this.superFreeze > 0 && this.superFocus) this.drawSuperFlash();
 
       // HUD (không rung)
       this.drawHUD();
@@ -1239,6 +1297,70 @@
         ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
       }
       ctx.globalAlpha = 1;
+    },
+
+    // Màn hình super điện ảnh: nền tối tập trung + luồng sáng hội tụ ở nhân vật
+    drawSuperFlash() {
+      const f = this.superFocus;
+      const p = clamp(this.superFreeze / this.superDur, 0, 1);   // 1 -> 0
+      const vig = clamp(Math.sin((1 - p) * Math.PI), 0, 1);       // vào & ra mượt
+      const warm = f.id === "luffy";
+      const c1 = warm ? "255,222,150" : "180,255,210";
+      const c2 = warm ? "255,90,40"  : "40,220,120";
+      const cx = f.x, cy = f.y - 62;
+
+      ctx.save();
+      // nền tối tập trung ánh nhìn
+      ctx.fillStyle = `rgba(4,3,12,${0.5 * vig})`;
+      ctx.fillRect(0, 0, W, H);
+
+      // cộng sáng
+      ctx.globalCompositeOperation = "lighter";
+      ctx.translate(cx, cy);
+
+      // tia sáng phóng xạ (speed lines) từ nhân vật
+      const rays = 18, spin = (1 - p) * 0.5;
+      for (let i = 0; i < rays; i++) {
+        const a = (i / rays) * Math.PI * 2 + spin;
+        ctx.strokeStyle = `rgba(${i % 2 ? c1 : c2},${0.5 * vig})`;
+        ctx.lineWidth = (i % 2 ? 7 : 16) * vig;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a) * 46, Math.sin(a) * 46);
+        ctx.lineTo(Math.cos(a) * 620, Math.sin(a) * 620);
+        ctx.stroke();
+      }
+
+      // quầng sáng hội tụ quanh nhân vật
+      const glow = ctx.createRadialGradient(0, 0, 6, 0, 0, 200);
+      glow.addColorStop(0,   `rgba(255,255,255,${0.95 * vig})`);
+      glow.addColorStop(0.3, `rgba(${c1},${0.8 * vig})`);
+      glow.addColorStop(0.7, `rgba(${c2},${0.32 * vig})`);
+      glow.addColorStop(1,   `rgba(${c2},0)`);
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(0, 0, 200, 0, Math.PI * 2); ctx.fill();
+
+      // vòng xung kích nở bung
+      const ringR = 24 + (1 - p) * 300;
+      ctx.strokeStyle = `rgba(255,255,255,${0.75 * p})`;
+      ctx.lineWidth = 8 * p;
+      ctx.beginPath(); ctx.arc(0, 0, ringR, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+
+      // tên chiêu bay vào (điện ảnh)
+      ctx.save();
+      ctx.globalAlpha = vig;
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = warm ? "#ffd23f" : "#8fffbf";
+      ctx.strokeStyle = "rgba(0,0,0,.7)"; ctx.lineWidth = 6;
+      ctx.font = "900 42px Trebuchet MS, sans-serif";
+      const ty = f.y - 150;
+      ctx.strokeText(f.name.toUpperCase(), W / 2, ty);
+      ctx.fillText(f.name.toUpperCase(), W / 2, ty);
+      ctx.font = "800 20px Trebuchet MS, sans-serif";
+      ctx.fillStyle = "#fff";
+      ctx.strokeText("★ SIÊU CHIÊU ★", W / 2, ty - 34);
+      ctx.fillText("★ SIÊU CHIÊU ★", W / 2, ty - 34);
+      ctx.restore();
     },
 
     drawHUD() {
@@ -1443,8 +1565,16 @@
         ctx.closePath(); ctx.fill();
       }
 
-      // Nhãn HAKI SẴN SÀNG nhấp nháy phát sáng nếu đầy 50%
-      if (f.meter >= 50) {
+      // Nhãn: đầy 100% -> SIÊU CHIÊU MAX (nhấp nháy), đầy 50% -> HAKI READY
+      if (f.meter >= 100) {
+        const blink = Math.floor(this.animT / 12) % 2 === 0;
+        ctx.fillStyle = blink ? "#fff" : "#ff4d4d";
+        ctx.font = "900 11px Arial, sans-serif";
+        ctx.textBaseline = "top";
+        ctx.textAlign = right ? "right" : "left";
+        const labelX = right ? x + barW - 10 : x + 10;
+        ctx.fillText("★ SIÊU CHIÊU MAX! ★", labelX, mY + mH + 3);
+      } else if (f.meter >= 50) {
         ctx.fillStyle = "#ffe14d";
         ctx.font = "bold 9px Arial, sans-serif";
         ctx.textBaseline = "top";
@@ -1512,6 +1642,15 @@
         }
         if (params.get("lx")) Game.luffy.x = +params.get("lx");
         if (params.get("zx")) Game.zoro.x = +params.get("zx");
+        // dựng cảnh SUPER (full Haki) để chụp màn khựng điện ảnh
+        const sup = params.get("sup");
+        if (sup && Game[sup]) {
+          const who = Game[sup];
+          who.meter = 100;
+          who.facing = sup === "luffy" ? 1 : -1;
+          who.startAttack("special");            // -> triggerSuper
+          Game.superFreeze = Game.superDur * (params.get("sf") ? +params.get("sf") : 0.5);
+        }
         // dựng cảnh minh hoạ hiệu ứng (combo + vòng xung kích + chớp)
         const demo = params.get("demo");
         if (demo) {
@@ -1529,7 +1668,7 @@
           Game.demoFreeze = true;
         }
         Game.announce = null;
-        Game.state = "paused";   // đóng băng để chụp
+        if (!params.get("nopause")) Game.state = "paused";   // đóng băng để chụp
       }, 60);
     }
   }
