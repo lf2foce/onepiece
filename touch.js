@@ -23,25 +23,35 @@
     try { window.dispatchEvent(new KeyboardEvent(type, { code, bubbles: true })); } catch (e) {}
   };
 
+  // Pad HTML dùng mã phím P1. Khi server gán máy này làm P2, đổi động sang
+  // bộ phím P2 để engine hiện tại nhận đúng đấu sĩ mà không nhân đôi logic input.
+  const p2Codes = {
+    KeyA: "ArrowLeft", KeyD: "ArrowRight", KeyW: "ArrowUp", KeyS: "ArrowDown",
+    KeyF: "Comma", KeyG: "Period", KeyH: "Slash",
+  };
+  const codeForRole = (code) => window.OP_ONLINE?.role === "p2" ? (p2Codes[code] || code) : code;
+
   // Gắn 1 nút -> giữ = keydown, thả = keyup (dùng pointer capture để không kẹt khi trượt ngón)
   const bind = (btn) => {
-    const code = btn.dataset.key;
-    if (!code) return;
+    const baseCode = btn.dataset.key;
+    if (!baseCode) return;
     let down = false;
+    let activeCode = baseCode;
     const press = (e) => {
       e.preventDefault();
       if (down) return;
       down = true;
+      activeCode = codeForRole(baseCode);
       btn.classList.add("pressed");
       try { btn.setPointerCapture(e.pointerId); } catch (_) {}
-      fireKey("keydown", code);
+      fireKey("keydown", activeCode);
     };
     const release = (e) => {
       if (e && e.preventDefault) e.preventDefault();
       if (!down) return;
       down = false;
       btn.classList.remove("pressed");
-      fireKey("keyup", code);
+      fireKey("keyup", activeCode);
     };
     btn.addEventListener("pointerdown", press);
     btn.addEventListener("pointerup", release);

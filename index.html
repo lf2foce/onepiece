@@ -31,6 +31,7 @@
         </div>
 
         <div class="mode-buttons">
+          <button class="btn btn-online" id="onlineBtn">🌐 CHƠI ONLINE <small>(2 điện thoại)</small></button>
           <button class="btn" data-mode="1p">1 NGƯỜI CHƠI <small>(đấu với máy)</small></button>
           <button class="btn" data-mode="2p">2 NGƯỜI CHƠI <small>(cùng bàn phím)</small></button>
           <button class="btn btn-sandbox" data-mode="sandbox">PHÒNG THỬ NGHIỆM <small>(vô hạn Haki)</small></button>
@@ -103,6 +104,33 @@
       </div>
     </div>
 
+    <!-- SẢNH ONLINE: tạo phòng trên máy P1, nhập mã/link trên máy P2 -->
+    <div id="onlineLobby" class="overlay hidden">
+      <div class="online-card">
+        <h2>🌐 ĐẤU ONLINE</h2>
+        <p class="online-lead">Tạo phòng rồi gửi mã hoặc đường link cho điện thoại thứ hai.</p>
+
+        <div id="onlineActions" class="online-actions">
+          <button class="btn btn-online" id="createRoomBtn">TẠO PHÒNG <small>(Player 1)</small></button>
+          <div class="join-row">
+            <input id="roomCodeInput" maxlength="6" inputmode="text" autocomplete="off" placeholder="MÃ PHÒNG" aria-label="Mã phòng" />
+            <button class="btn" id="joinRoomBtn">VÀO PHÒNG <small>(Player 2)</small></button>
+          </div>
+        </div>
+
+        <div id="onlineWaiting" class="online-waiting hidden">
+          <span id="onlineRole" class="online-role">PLAYER 1</span>
+          <div class="room-code-label">MÃ PHÒNG</div>
+          <strong id="onlineRoomCode" class="room-code">-----</strong>
+          <button class="btn btn-ghost" id="copyRoomBtn">SAO CHÉP LINK MỜI</button>
+          <p id="onlineStatus" class="online-status" aria-live="polite">Đang kết nối…</p>
+        </div>
+
+        <p id="onlineError" class="online-error hidden" role="alert"></p>
+        <button class="btn btn-ghost" id="onlineCloseBtn">Đóng</button>
+      </div>
+    </div>
+
     <!-- BẢNG CHỌN TƯỚNG (mở khi bấm vào ô đấu sĩ ở menu) -->
     <div id="charPicker" class="overlay hidden">
       <div class="picker-card">
@@ -123,6 +151,7 @@
     </div>
 
     <div id="pauseHint" class="corner-hint hidden">ESC: Menu · P: Tạm dừng</div>
+    <div id="networkBadge" class="network-badge hidden">ONLINE</div>
 
     <!-- ĐIỀU KHIỂN CẢM ỨNG (hiện trên điện thoại/màn cảm ứng). Mỗi nút bắn 1 phím ảo cho Người chơi 1. -->
     <div id="touchpad" class="hidden">
@@ -157,6 +186,7 @@
   <script src="blackbeard.js"></script>
   <script src="game.js"></script>
   <script src="adventure.js"></script>
+  <script src="multiplayer.js"></script>
   <script src="touch.js"></script>
 </body>
 </html>

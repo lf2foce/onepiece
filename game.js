@@ -1327,7 +1327,7 @@
     },
 
     bindUI() {
-      document.querySelectorAll(".mode-buttons .btn").forEach(b => {
+      document.querySelectorAll(".mode-buttons .btn[data-mode]").forEach(b => {
         b.addEventListener("click", () => this.startMatch(b.dataset.mode));
       });
       document.getElementById("howtoBtn").addEventListener("click", () => {
@@ -1680,6 +1680,9 @@
         const iA = this.aiA.think(dt, this.nearestEnemy(this.foeA));
         const iB = this.aiB.think(dt, this.nearestEnemy(this.foeB));
         intentOf = (f) => f === this.luffy ? i1 : f === this.zoro ? i2 : f === this.foeA ? iA : iB;
+      } else if (this.mode === "online" && this.onlineIntents) {
+        const online = this.onlineIntents();
+        intentOf = (f) => f === this.luffy ? online.p1 : online.p2;
       } else {
         const i1 = this.humanIntents("p1");
         const i2 = (this.mode === "2p" || this.mode === "sandbox")
