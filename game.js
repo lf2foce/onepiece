@@ -162,6 +162,8 @@
     aokiji: { close: "icetime",  ranged: "icerain",  special: "iceage" },
     sabo:   { close: "kagizume", ranged: "clawrain", special: "hiryuo" },
     akainu: { close: "meigo",    ranged: "ryusei",   special: "inugami" },
+    whitebeard: { close: "shima",   ranged: "kaishin",  special: "seaquake" },
+    blackbeard: { close: "kurouzu", ranged: "darkgrip", special: "blackhole" },
   };
 
   // Danh sách tướng dùng chung cho HUD, aura và bảng chọn tướng ở sảnh chờ.
@@ -183,8 +185,12 @@
               form: { name: "RYUSOKEN — LONG HOÁ", cry: "Ryusoken!", c1: "#ffe066", c2: "#ff5a1a" } },
     akainu: { name: "AKAINU", emoji: "🌋", aura: "#ff3300", warm: true,  title: "Đô Đốc Dung Nham", desc: "Magu Magu · Dai Funka",
               form: { name: "MAGU MAGU — TOÀN THÂN DUNG NHAM", cry: "Magu Magu no Mi!", c1: "#ffb300", c2: "#8b1a00" } },
+    whitebeard: { name: "RÂU TRẮNG", emoji: "🔱", aura: "#cfffff", warm: false, title: "Người Mạnh Nhất", desc: "Gura Gura · Chấn Động",
+              form: { name: "GURA GURA — CHẤN THẦN", cry: "Gura Gura no Mi!", c1: "#ffffff", c2: "#3aa0e6" } },
+    blackbeard: { name: "RÂU ĐEN", emoji: "🕳️", aura: "#a24bd6", warm: false, title: "Tứ Hoàng Bóng Tối", desc: "Yami Yami · Kurouzu",
+              form: { name: "YAMI YAMI — SONG QUẢ", cry: "Zehahaha!", c1: "#b060ff", c2: "#1a0330" } },
   };
-  const ROSTER = ["luffy", "zoro", "sanji", "shanks", "ace", "aokiji", "sabo", "akainu"];
+  const ROSTER = ["luffy", "zoro", "sanji", "shanks", "ace", "aokiji", "sabo", "akainu", "whitebeard", "blackbeard"];
   const infoOf = id => CHAR_INFO[id] || CHAR_INFO.zoro;
 
   // ================================================================ PROJECTILE
@@ -462,6 +468,7 @@
   class Fighter {
     constructor(id, x, facing) {
       this.id = id;                 // "luffy" | "zoro"
+      this.team = 0;                // đội (0/1) — gán lại ở startRound
       this.moves = MOVES[id];
       this.x = x;
       this.y = GROUND;              // y = mặt đất của chân
@@ -1026,6 +1033,8 @@
       else if (s.id === "aokiji" && this.drawAokiji) this.drawAokiji(flashing);
       else if (s.id === "sabo" && this.drawSabo) this.drawSabo(flashing);
       else if (s.id === "akainu" && this.drawAkainu) this.drawAkainu(flashing);
+      else if (s.id === "whitebeard" && this.drawWhitebeard) this.drawWhitebeard(flashing);
+      else if (s.id === "blackbeard" && this.drawBlackbeard) this.drawBlackbeard(flashing);
 
       ctx.restore();
     }
@@ -1190,6 +1199,8 @@
     if (window.AokijiInit) window.AokijiInit(Fighter, MOVES);
     if (window.SaboInit) window.SaboInit(Fighter, MOVES);
     if (window.AkainuInit) window.AkainuInit(Fighter, MOVES);
+    if (window.WhitebeardInit) window.WhitebeardInit(Fighter, MOVES);
+    if (window.BlackbeardInit) window.BlackbeardInit(Fighter, MOVES);
 
     // Ô ↓+skill khi mới có 50-99 Haki: BIẾN HÌNH. Dựng chung một chiêu cho mọi tướng,
     // tên/tiếng hô lấy từ CHAR_INFO.form của từng người.
@@ -1305,6 +1316,12 @@
       this.luffy = new Fighter("luffy", W*0.32, 1);
       this.zoro  = new Fighter("zoro",  W*0.68, -1);
       this.players = [this.luffy, this.zoro];
+      // 2 đấu sĩ máy phụ cho chế độ 2v2 (2 người đấu 2 máy)
+      this.foeA = new Fighter("shanks", W*0.80, -1);
+      this.foeB = new Fighter("ace",    W*0.92, -1);
+      this.aiA = new AI(this.foeA);
+      this.aiB = new AI(this.foeB);
+      this.teamWins = [0, 0];
       this.bindUI();
       requestAnimationFrame(this.loop.bind(this));
     },
@@ -1391,6 +1408,7 @@
     startMatch(mode) {
       this.mode = mode;
       this.luffy.wins = 0; this.zoro.wins = 0;
+      this.teamWins = [0, 0];
       this.round = 1;
       // Phòng thử nghiệm: KHÔNG dùng máy nữa, để người chơi 2 vào chơi luôn (2 người vô hạn HP/Haki)
       this.ai = (mode === "1p") ? new AI(this.zoro) : null;
@@ -1399,6 +1417,20 @@
       this.startRound();
     },
 
+    // Danh sách đấu sĩ đang đánh (2 ở 1v1, 4 ở 2v2) + tiện ích theo ĐỘI
+    combatants() { return this.mode === "2v2" ? [this.luffy, this.zoro, this.foeA, this.foeB] : this.players; },
+    enemiesOf(f) { return this.combatants().filter(g => g.team !== f.team); },
+    nearestEnemy(f) {
+      let best = null, bd = Infinity;
+      for (const g of this.enemiesOf(f)) {
+        if (g.state === "ko") continue;
+        const d = Math.abs(g.x - f.x);
+        if (d < bd) { bd = d; best = g; }
+      }
+      return best || this.enemiesOf(f)[0];   // tất cả đã KO -> vẫn trả 1 đối thủ để tính hướng nhìn
+    },
+    teamAlive(t) { return this.combatants().some(g => g.team === t && g.state !== "ko"); },
+
     startRound() {
       // Gán nhân vật đã chọn từ sảnh chờ
       this.luffy.id = this.p1CharId || "luffy";
@@ -1406,9 +1438,25 @@
       this.zoro.id = this.p2CharId || "zoro";
       this.zoro.moves = MOVES[this.zoro.id];
 
-      this.luffy.reset(W*0.30, 1);
-      this.zoro.reset(W*0.70, -1);
-      this.luffy.meter = 0; this.zoro.meter = 0;
+      if (this.mode === "2v2") {
+        // Đội người: P1 (trái) + P2 (giữa-trái). Đội máy: 2 tướng ngẫu nhiên (phải).
+        this.luffy.team = 0; this.zoro.team = 0;
+        this.luffy.reset(W*0.16, 1);  this.luffy.meter = 0;
+        this.zoro.reset(W*0.32, 1);   this.zoro.meter = 0;
+        const pool = ROSTER.filter(id => id !== this.luffy.id && id !== this.zoro.id);
+        const pick = () => pool.length ? pool.splice(Math.floor(Math.random() * pool.length), 1)[0] : "shanks";
+        for (const foe of [this.foeA, this.foeB]) {
+          foe.id = pick(); foe.moves = MOVES[foe.id]; foe.team = 1;
+        }
+        this.foeA.reset(W*0.68, -1); this.foeA.meter = 0;
+        this.foeB.reset(W*0.84, -1); this.foeB.meter = 0;
+        this.aiA.want = {}; this.aiB.want = {};
+      } else {
+        this.luffy.team = 0; this.zoro.team = 1;
+        this.luffy.reset(W*0.30, 1);
+        this.zoro.reset(W*0.70, -1);
+        this.luffy.meter = 0; this.zoro.meter = 0;
+      }
       this.projectiles = [];
       this.sparks = [];
       this.hitstop = 0; this.flashScreen = 0;
@@ -1596,7 +1644,7 @@
         if (this.announce.t <= 0) this.announce = null;
       }
       // đếm giờ combo cho cả hai
-      for (const f of this.players) {
+      for (const f of this.combatants()) {
         if (f.comboTimer > 0) { f.comboTimer -= dt * 1000; if (f.comboTimer <= 0) f.combo = 0; }
         if (f.comboPop > 0) f.comboPop = Math.max(0, f.comboPop - dt * 6);
       }
@@ -1625,21 +1673,30 @@
         this.zoro.meter = 100;
       }
 
-      // intents
-      const i1 = this.humanIntents("p1");
-      const i2 = (this.mode === "2p" || this.mode === "sandbox")
-        ? this.humanIntents("p2")                 // sandbox cũng là 2 người chơi thật
-        : this.ai.think(dt, this.luffy);
+      // intents — mỗi đấu sĩ một nguồn: người chơi (p1/p2) hoặc máy
+      let intentOf;
+      if (this.mode === "2v2") {
+        const i1 = this.humanIntents("p1"), i2 = this.humanIntents("p2");
+        const iA = this.aiA.think(dt, this.nearestEnemy(this.foeA));
+        const iB = this.aiB.think(dt, this.nearestEnemy(this.foeB));
+        intentOf = (f) => f === this.luffy ? i1 : f === this.zoro ? i2 : f === this.foeA ? iA : iB;
+      } else {
+        const i1 = this.humanIntents("p1");
+        const i2 = (this.mode === "2p" || this.mode === "sandbox")
+          ? this.humanIntents("p2")               // sandbox cũng là 2 người chơi thật
+          : this.ai.think(dt, this.luffy);
+        intentOf = (f) => f === this.luffy ? i1 : i2;
+      }
 
-      // đẩy nhau để không chồng lên nhau
+      // đẩy nhau để không chồng lên nhau (chỉ đẩy đối thủ khác đội)
       this.separate();
 
-      this.luffy.update(dt, this.zoro, i1);
-      this.zoro.update(dt, this.luffy, i2);
+      const combatants = this.combatants();
+      for (const f of combatants) f.update(dt, this.nearestEnemy(f), intentOf(f));
 
-      // va chạm đòn melee
-      this.resolveMelee(this.luffy, this.zoro);
-      this.resolveMelee(this.zoro, this.luffy);
+      // va chạm đòn melee: mỗi người tấn công đánh trúng mọi đối thủ khác đội
+      for (const atk of combatants)
+        for (const def of this.enemiesOf(atk)) this.resolveMelee(atk, def);
 
       // projectiles
       for (const p of this.projectiles) p.update(dt);
@@ -1651,7 +1708,7 @@
         if (a.dead) continue;
         for (let j = i + 1; j < projs.length; j++) {
           const b = projs[j];
-          if (b.dead || a.owner === b.owner) continue;      // chỉ đấu với chưởng đối phương
+          if (b.dead || a.owner.team === b.owner.team) continue;   // chỉ đấu với chưởng đối phương (khác đội)
           if (!rectsOverlap(a.rect, b.rect)) continue;
           const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
           const pa = a.d.dmg * (a.d.super ? 2.2 : 1);
@@ -1664,8 +1721,10 @@
       }
 
       for (const p of this.projectiles) {
-        const target = p.owner === this.luffy ? this.zoro : this.luffy;
-        if (!p.dead && target.state !== "ko" && rectsOverlap(p.rect, target.body)) {
+        if (p.dead) continue;
+        // đạn trúng đối thủ KHÁC ĐỘI đầu tiên nó chạm phải
+        const target = this.enemiesOf(p.owner).find(g => g.state !== "ko" && rectsOverlap(p.rect, g.body));
+        if (target) {
           const dir = Math.sign(p.vx) || target.facing*-1;
           target.takeHit(p.d.dmg, p.d.knockback, p.d.launch, dir, p.d.kind==="redhawk"||p.d.kind==="tatsumaki"||p.d.super, p.owner);
           p.owner.gainMeter(6);
@@ -1679,8 +1738,10 @@
       }
       this.projectiles = this.projectiles.filter(p => !p.dead);
 
-      // điều kiện kết thúc hiệp
-      const ko = this.luffy.hp <= 0 || this.zoro.hp <= 0;
+      // điều kiện kết thúc hiệp: 1v1 -> có người gục; 2v2 -> cả một đội gục
+      const ko = this.mode === "2v2"
+        ? (!this.teamAlive(0) || !this.teamAlive(1))
+        : (this.luffy.hp <= 0 || this.zoro.hp <= 0);
       const timeUp = this.timeLeft <= 0;
       if (ko || timeUp) {
         this.endRound();
@@ -1691,19 +1752,22 @@
       // Đi bài co-op: 2 người chơi là ĐỒNG ĐỘI -> cho đi xuyên qua nhau.
       // Nếu vẫn đẩy như đối thủ 1v1 thì hai người kẹt cứng, không lách qua nhau được.
       if (this.mode === "adventure") return;
-      const a = this.luffy, b = this.zoro;
       const minDist = 44;
-      const d = b.x - a.x;
-      const ad = Math.abs(d);
-      if (ad < minDist && a.onGround && b.onGround) {
-        const push = (minDist - ad) / 2;
-        const dir = d >= 0 ? 1 : -1;
-        a.x -= push * dir;
-        b.x += push * dir;
-        // Đi bài: giới hạn theo bề rộng bản đồ, không phải khung 1v1
-        const maxX = (this.mode === "adventure" && this.stageWidth ? this.stageWidth : W) - 40;
-        a.x = clamp(a.x, 40, maxX);
-        b.x = clamp(b.x, 40, maxX);
+      const maxX = W - 40;
+      // Chỉ đẩy các cặp KHÁC ĐỘI (đồng đội trong 2v2 đi xuyên qua nhau).
+      const list = this.combatants();
+      for (let i = 0; i < list.length; i++) {
+        for (let j = i + 1; j < list.length; j++) {
+          const a = list[i], b = list[j];
+          if (a.team === b.team) continue;
+          if (!a.onGround || !b.onGround) continue;
+          const d = b.x - a.x, ad = Math.abs(d);
+          if (ad >= minDist) continue;
+          const push = (minDist - ad) / 2;
+          const dir = d >= 0 ? 1 : -1;
+          a.x = clamp(a.x - push * dir, 40, maxX);
+          b.x = clamp(b.x + push * dir, 40, maxX);
+        }
       }
     },
 
@@ -1748,6 +1812,7 @@
     },
 
     endRound() {
+      if (this.mode === "2v2") return this.endRound2v2();
       this.state = "roundover";
       let winner = null;
       if (this.luffy.hp <= 0 && this.zoro.hp <= 0) winner = null;
@@ -1780,10 +1845,44 @@
       setTimeout(() => this.show("result"), 700);
     },
 
+    // Kết thúc hiệp 2v2: so tổng HP còn lại của 2 đội
+    endRound2v2() {
+      this.state = "roundover";
+      const hp = t => this.combatants().filter(f => f.team === t).reduce((s, f) => s + Math.max(0, f.hp), 0);
+      const a0 = this.teamAlive(0), a1 = this.teamAlive(1);
+      let winTeam = null;
+      if (a0 && !a1) winTeam = 0;
+      else if (a1 && !a0) winTeam = 1;
+      else if (a0 && a1) winTeam = hp(0) === hp(1) ? null : (hp(0) > hp(1) ? 0 : 1);   // hết giờ -> đội nhiều máu hơn
+      if (winTeam !== null) this.teamWins[winTeam]++;
+
+      const target = 2;
+      const matchOver = this.teamWins[0] >= target || this.teamWins[1] >= target;
+      const teamName = t => t === 0 ? "ĐỘI NGƯỜI CHƠI" : "ĐỘI MÁY";
+      const rt = document.getElementById("resultTitle");
+      const tx = document.getElementById("resultText");
+      const btn = document.getElementById("resultBtn");
+      const score = `Tỉ số: <b>${this.teamWins[0]}</b> – <b>${this.teamWins[1]}</b>`;
+
+      if (matchOver) {
+        this.state = "matchover";
+        const champ = this.teamWins[0] >= target ? 0 : 1;
+        rt.textContent = champ === 0 ? "🏆 NGƯỜI CHƠI THẮNG!" : "🤖 ĐỘI MÁY THẮNG!";
+        tx.innerHTML = `<b>${teamName(champ)}</b> vô địch!<br>${score}`;
+        btn.textContent = "CHƠI LẠI";
+      } else {
+        rt.textContent = winTeam === null ? "HÒA HIỆP" : `${teamName(winTeam)} THẮNG HIỆP`;
+        tx.innerHTML = `${score}<br>Cần thắng ${target} hiệp để vô địch.`;
+        btn.textContent = "HIỆP TIẾP THEO";
+      }
+      setTimeout(() => this.show("result"), 700);
+    },
+
     onResultContinue() {
       this.hide("result");
       if (this.state === "matchover") {
         this.luffy.wins = 0; this.zoro.wins = 0;
+        this.teamWins = [0, 0];
         this.round = 1;
         this.startRound();
       } else {
@@ -1797,9 +1896,8 @@
       ctx.save();
       this.drawBackground();
 
-      // sắp xếp vẽ theo hp? vẽ cả hai
-      this.luffy.draw();
-      this.zoro.draw();
+      // vẽ mọi đấu sĩ đang đánh (2 hoặc 4), người sâu hơn (x nhỏ) vẽ trước
+      for (const f of this.combatants().slice().sort((a, b) => a.x - b.x)) f.draw();
 
       for (const p of this.projectiles) {
         // Đạn tán xạ: xoay quanh chính nó theo hướng bay rồi mới gọi draw().
@@ -2052,9 +2150,15 @@
     },
 
     drawHUD() {
-      // thanh máu + haki cho 2 người
-      this.drawBar(this.luffy, 24, false);
-      this.drawBar(this.zoro, W-24, true);
+      if (this.mode === "2v2") {
+        // 2v2: mỗi đội một thanh máu gộp lớn + 2 avatar nhỏ
+        this.drawTeamBar(0, false);
+        this.drawTeamBar(1, true);
+      } else {
+        // thanh máu + haki cho 2 người
+        this.drawBar(this.luffy, 24, false);
+        this.drawBar(this.zoro, W-24, true);
+      }
 
       // đồng hồ
       const t = Math.max(0, Math.ceil(this.timeLeft));
@@ -2066,8 +2170,71 @@
       ctx.fillText(t, W/2, 40);
 
       // số hiệp thắng (chấm tròn)
-      this.drawWinPips(this.luffy, 24+8, 64, false);
-      this.drawWinPips(this.zoro, W-24-8, 64, true);
+      if (this.mode === "2v2") {
+        this.drawWinPipsAt(this.teamWins[0], 24, 92, false);
+        this.drawWinPipsAt(this.teamWins[1], W-24, 92, true);
+      } else {
+        this.drawWinPips(this.luffy, 24+8, 64, false);
+        this.drawWinPips(this.zoro, W-24-8, 64, true);
+      }
+    },
+
+    // Thanh máu gộp của cả một đội trong 2v2 (2 đấu sĩ xếp dọc, mỗi người 1 cột nhỏ)
+    drawTeamBar(team, right) {
+      const members = this.combatants().filter(f => f.team === team);
+      const barW = 300, barH = 15, gap = 5;
+      const x = right ? W - 40 - barW : 40;
+      const label = team === 0 ? "ĐỘI NGƯỜI CHƠI" : "ĐỘI MÁY";
+      const tint = team === 0 ? "#ffd23f" : "#ff6b6b";
+
+      ctx.textAlign = right ? "right" : "left";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = tint;
+      ctx.font = "italic 900 15px Trebuchet MS, sans-serif";
+      ctx.strokeStyle = "rgba(0,0,0,.5)"; ctx.lineWidth = 3;
+      const lx = right ? x + barW : x;
+      ctx.strokeText(label, lx, 22); ctx.fillText(label, lx, 22);
+
+      members.forEach((f, i) => {
+        const y = 30 + i * (barH + gap);
+        // nền
+        ctx.fillStyle = "rgba(0,0,0,.6)";
+        roundRect(x - 2, y - 2, barW + 4, barH + 4, 4); ctx.fill();
+        // máu
+        const hpW = Math.max(0, barW * (f.hp / MAX_HP));
+        const g = ctx.createLinearGradient(x, y, x + barW, y);
+        if (f.hp <= 0) { /* trống */ }
+        else {
+          g.addColorStop(0, team === 0 ? "#adff2f" : "#ffa07a");
+          g.addColorStop(1, team === 0 ? "#2e8b2e" : "#c0392b");
+          ctx.fillStyle = g;
+          const bx = right ? x + barW - hpW : x;
+          roundRect(bx, y, hpW, barH, 3); ctx.fill();
+        }
+        // Haki (vạch mảnh dưới đáy)
+        ctx.fillStyle = "rgba(255,210,60,.9)";
+        const mW = barW * (f.meter / 100);
+        const mx = right ? x + barW - mW : x;
+        ctx.fillRect(mx, y + barH - 3, mW, 3);
+        // biểu tượng + tên tướng
+        const info = infoOf(f.id);
+        ctx.textAlign = right ? "right" : "left";
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 11px Trebuchet MS, sans-serif";
+        const nx = right ? x + barW - 2 : x + 2;
+        const nm = `${info.emoji} ${info.name}` + (f.state === "ko" ? " ✖" : "");
+        ctx.fillText(nm, nx, y + barH - 4);
+      });
+    },
+
+    drawWinPipsAt(wins, edgeX, y, right) {
+      for (let i = 0; i < 2; i++) {
+        const px = right ? edgeX - i*18 : edgeX + i*18;
+        ctx.beginPath(); ctx.arc(px, y, 6, 0, Math.PI*2);
+        ctx.fillStyle = i < wins ? "#ffd23f" : "rgba(255,255,255,.22)";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(0,0,0,.4)"; ctx.lineWidth = 1.5; ctx.stroke();
+      }
     },
 
     drawCombos() {
@@ -2087,8 +2254,12 @@
         ctx.strokeText("COMBO", 0, 30); ctx.fillText("COMBO", 0, 30);
         ctx.restore();
       };
-      one(this.luffy, W*0.26, "#ffcf33");
-      one(this.zoro,  W*0.74, "#8fffbf");
+      if (this.mode === "2v2") {
+        for (const f of this.combatants()) one(f, f.x, f.team === 0 ? "#ffcf33" : "#ff9a6b");
+      } else {
+        one(this.luffy, W*0.26, "#ffcf33");
+        one(this.zoro,  W*0.74, "#8fffbf");
+      }
     },
 
     drawBar(f, edgeX, right) {

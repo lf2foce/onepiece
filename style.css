@@ -128,6 +128,12 @@ html, body {
 .btn-sandbox:active {
   box-shadow: 0 3px 0 #4a148c, 0 6px 14px rgba(0,0,0,.45);
 }
+.btn-2v2 {
+  background: linear-gradient(180deg, #2e9bd6, #1f6fb0);
+  color: #fff;
+  box-shadow: 0 8px 0 #14507f, 0 12px 22px rgba(0,0,0,.45);
+}
+.btn-2v2:active { box-shadow: 0 3px 0 #14507f, 0 6px 14px rgba(0,0,0,.45); }
 .btn-adventure {
   background: linear-gradient(180deg, #ff5722, #e64a19);
   color: #fff;
