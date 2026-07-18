@@ -360,7 +360,7 @@ kbd {
 .tp-btn:active, .tp-abtn:active, .tp-btn.pressed, .tp-abtn.pressed { transform: scale(0.92); }
 
 /* --- D-pad (trái) --- */
-.tp-dpad { position: absolute; left: 3.5%; bottom: 7%; width: 174px; height: 174px; }
+.tp-dpad { position: absolute; left: calc(3.5% + env(safe-area-inset-left)); bottom: calc(7% + env(safe-area-inset-bottom)); width: 174px; height: 174px; }
 .tp-btn {
   width: 58px; height: 58px; font-size: 24px;
   background: rgba(255,255,255,0.16);
@@ -375,7 +375,7 @@ kbd {
 .tp-btn.pressed { background: rgba(255,210,60,0.55); border-color: #ffd23f; }
 
 /* --- Nút chiêu (phải) --- */
-.tp-actions { position: absolute; right: 3.5%; bottom: 7%; width: 210px; height: 190px; }
+.tp-actions { position: absolute; right: calc(3.5% + env(safe-area-inset-right)); bottom: calc(7% + env(safe-area-inset-bottom)); width: 210px; height: 190px; }
 .tp-abtn {
   width: 70px; height: 70px; border-radius: 50%; font-size: 15px;
   border: 2px solid rgba(255,255,255,0.32);
@@ -388,7 +388,7 @@ kbd {
 .tp-abtn.pressed { filter: brightness(1.5); border-color: #fff; }
 
 .tp-mini {
-  top: 3%; right: 3.5%;
+  top: calc(3% + env(safe-area-inset-top)); right: calc(3.5% + env(safe-area-inset-right));
   width: 42px; height: 42px; border-radius: 10px; font-size: 17px;
   background: rgba(0,0,0,0.4);
   border: 1px solid rgba(255,255,255,0.22);
@@ -408,3 +408,7 @@ kbd {
 }
 /* Trên thiết bị cảm ứng: bỏ bo góc (nút tràn ra mép cho gọn) */
 body.touch-device #game { border-radius: 0; }
+
+/* iOS/Android: chặn kéo-nảy (rubber-band), pull-to-refresh, chọn chữ khi chơi */
+html, body { overscroll-behavior: none; }
+body.touch-device { touch-action: none; -webkit-user-select: none; user-select: none; }
