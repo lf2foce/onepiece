@@ -260,3 +260,78 @@ kbd {
   z-index: 5;
 }
 .corner-hint.hidden { display: none; }
+
+/* ===================== ĐIỀU KHIỂN CẢM ỨNG (MOBILE) ===================== */
+#touchpad {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;      /* container không chặn; chỉ nút mới nhận chạm */
+  touch-action: none;
+}
+#touchpad.hidden { display: none; }
+
+.tp-btn, .tp-abtn, .tp-mini {
+  position: absolute;
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none; -webkit-user-select: none;
+  border: none;
+  color: #fff;
+  font-weight: 800;
+  font-family: inherit;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.tp-btn:active, .tp-abtn:active, .tp-btn.pressed, .tp-abtn.pressed { transform: scale(0.92); }
+
+/* --- D-pad (trái) --- */
+.tp-dpad { position: absolute; left: 3.5%; bottom: 7%; width: 174px; height: 174px; }
+.tp-btn {
+  width: 58px; height: 58px; font-size: 24px;
+  background: rgba(255,255,255,0.16);
+  border: 2px solid rgba(255,255,255,0.28);
+  border-radius: 12px;
+  backdrop-filter: blur(2px);
+}
+.tp-up    { left: 58px; top: 0; }
+.tp-left  { left: 0;    top: 58px; }
+.tp-down  { left: 58px; top: 116px; }
+.tp-right { left: 116px;top: 58px; }
+.tp-btn.pressed { background: rgba(255,210,60,0.55); border-color: #ffd23f; }
+
+/* --- Nút chiêu (phải) --- */
+.tp-actions { position: absolute; right: 3.5%; bottom: 7%; width: 210px; height: 190px; }
+.tp-abtn {
+  width: 70px; height: 70px; border-radius: 50%; font-size: 15px;
+  border: 2px solid rgba(255,255,255,0.32);
+  text-shadow: 0 1px 2px rgba(0,0,0,.6);
+}
+.tp-a-close   { right: 122px; bottom: 4px;   background: rgba(70,140,255,0.42); }
+.tp-a-ranged  { right: 60px;  bottom: 70px;  background: rgba(60,200,120,0.42); }
+.tp-a-special { right: 2px;   bottom: 4px;   background: rgba(255,80,80,0.5); width: 78px; height: 78px; }
+.tp-a-jump    { right: 100px; bottom: 128px; width: 54px; height: 54px; font-size: 12px; background: rgba(255,255,255,0.16); }
+.tp-abtn.pressed { filter: brightness(1.5); border-color: #fff; }
+
+.tp-mini {
+  top: 3%; right: 3.5%;
+  width: 42px; height: 42px; border-radius: 10px; font-size: 17px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.22);
+}
+
+/* Nhắc xoay ngang: chỉ hiện khi thiết bị cảm ứng đang cầm DỌC */
+.rotate-hint { display: none; }
+@media (orientation: portrait) {
+  body.touch-device .rotate-hint {
+    display: flex;
+    position: absolute; inset: 0; z-index: 40;
+    align-items: center; justify-content: center; text-align: center;
+    padding: 24px;
+    background: rgba(5,6,11,0.96);
+    color: #ffd23f; font-size: clamp(18px, 5vw, 26px); font-weight: 800;
+  }
+}
+/* Trên thiết bị cảm ứng: bỏ bo góc (nút tràn ra mép cho gọn) */
+body.touch-device #game { border-radius: 0; }

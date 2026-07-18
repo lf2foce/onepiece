@@ -123,6 +123,26 @@
     </div>
 
     <div id="pauseHint" class="corner-hint hidden">ESC: Menu · P: Tạm dừng</div>
+
+    <!-- ĐIỀU KHIỂN CẢM ỨNG (hiện trên điện thoại/màn cảm ứng). Mỗi nút bắn 1 phím ảo cho Người chơi 1. -->
+    <div id="touchpad" class="hidden">
+      <div class="tp-dpad">
+        <button class="tp-btn tp-up"    data-key="KeyW" aria-label="Nhảy">▲</button>
+        <button class="tp-btn tp-left"  data-key="KeyA" aria-label="Trái">◀</button>
+        <button class="tp-btn tp-down"  data-key="KeyS" aria-label="Xuống/Đỡ">▼</button>
+        <button class="tp-btn tp-right" data-key="KeyD" aria-label="Phải">▶</button>
+      </div>
+      <div class="tp-actions">
+        <button class="tp-abtn tp-a-close" data-key="KeyF">Đấm</button>
+        <button class="tp-abtn tp-a-ranged" data-key="KeyG">Xa</button>
+        <button class="tp-abtn tp-a-special" data-key="KeyH">Chiêu</button>
+        <button class="tp-abtn tp-a-jump" data-key="KeyW">Nhảy</button>
+      </div>
+      <button id="tpPause" class="tp-mini" aria-label="Menu">⏸</button>
+    </div>
+
+    <!-- Nhắc xoay ngang khi cầm dọc điện thoại -->
+    <div id="rotateHint" class="rotate-hint">📱↻ Xoay ngang điện thoại để chơi</div>
   </div>
 
   <script src="luffy.js"></script>
@@ -137,5 +157,6 @@
   <script src="blackbeard.js"></script>
   <script src="game.js"></script>
   <script src="adventure.js"></script>
+  <script src="touch.js"></script>
 </body>
 </html>
