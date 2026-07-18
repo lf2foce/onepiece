@@ -63,6 +63,9 @@
     applyingControl: false,
     remoteHeld: { p1: {}, p2: {} },
     remoteEdges: { p1: new Set(), p2: new Set() },
+    // Phím đòn bấm trong lúc khựng hình (hitstop/super freeze) — engine không đọc
+    // intent ở các frame đó nhưng vẫn xoá justPressed, nên phải tự giữ lại ở đây.
+    localEdgeBuffer: new Set(),
 
     showLobby() {
       this.intentionallyClosed = false;
@@ -225,6 +228,7 @@
       badge.classList.remove("hidden");
       badge.textContent = `${this.role?.toUpperCase()} · ${this.room}`;
       this.started = true;
+      this.localEdgeBuffer.clear();
       this.setConnected(true);
       if (Game.mode !== "online" || Game.state === "menu") Game.startMatch("online");
       if (this.pendingSnapshot && this.role === "p2") {
@@ -308,8 +312,15 @@
         if (!data || !ROSTER.has(data.id) || !MOVES[data.id]) return;
         fighter.id = data.id;
         fighter.moves = MOVES[data.id];
-        for (const key of ["x","y","vx","vy","facing","onGround","hp","meter","formT","state","hurtTimer","blocking","flash","combo","comboTimer","comboPop","wins","animTime","walkPhase"]) {
+        for (const key of ["vx","vy","facing","onGround","hp","meter","formT","state","hurtTimer","blocking","flash","combo","comboTimer","comboPop","wins","animTime","walkPhase"]) {
           if (data[key] !== undefined) fighter[key] = data[key];
+        }
+        // Vị trí: snapshot luôn cũ hơn hiện tại ~nửa RTT, gán thẳng sẽ giật lùi.
+        // Hoà dần về vị trí authority (hết lệch sau ~2-3 snapshot); chỉ bật thẳng khi lệch quá xa.
+        if (typeof data.x === "number" && typeof data.y === "number") {
+          const ex = data.x - fighter.x, ey = data.y - fighter.y;
+          if (Math.abs(ex) > 140 || Math.abs(ey) > 140) { fighter.x = data.x; fighter.y = data.y; }
+          else { fighter.x += ex * 0.35; fighter.y += ey * 0.35; }
         }
         fighter._scripted = Boolean(data.scripted);
         const def = data.attack && fighter.moves[data.attack.key];
@@ -409,11 +420,27 @@
     roomInput.value = roomInput.value.toUpperCase().replace(/[^A-Z2-9]/g, "");
   });
 
+  // Giữ phím đòn bấm giữa hitstop/super freeze: engine bỏ qua intent các frame đó
+  // nhưng vẫn xoá justPressed mỗi frame -> không có buffer này là mất đòn (và lệch
+  // với máy đối thủ, vì phím gửi qua mạng lại được remoteEdges giữ hộ).
+  const EDGE_KEYCODES = {
+    p1: { KeyF: "close", KeyG: "ranged", KeyH: "special" },
+    p2: { Comma: "close", Period: "ranged", Slash: "special" },
+  };
+  window.addEventListener("keydown", (event) => {
+    if (!Online.started || Game.mode !== "online" || Game.state !== "playing" || event.repeat) return;
+    const map = EDGE_KEYCODES[Online.role];
+    const key = map && map[event.code];
+    if (key) Online.localEdgeBuffer.add(key);
+  });
+
   // Chế độ online lấy intent local từ đúng vai và intent đối thủ từ WebSocket.
   const originalHumanIntents = Game.humanIntents;
   Game.onlineIntents = function() {
     const role = Online.role;
     const local = originalHumanIntents.call(this, role || "p1");
+    for (const key of Online.localEdgeBuffer) local[key] = true;
+    Online.localEdgeBuffer.clear();
     Online.sendInput(role, local);
     return {
       p1: role === "p1" ? local : Online.remoteIntent("p1"),
@@ -441,8 +468,14 @@
 
   const originalEndRound = Game.endRound;
   Game.endRound = function() {
+    // P1 là authority: sim của P2 có thể lệch nhẹ nên KHÔNG được tự kết thúc hiệp,
+    // phải chờ hiệu lệnh round_end từ P1 (nếu không hai máy hết hiệp hai thời điểm khác nhau).
+    if (this.mode === "online" && Online.started && Online.role === "p2" && !Online.applyingControl) {
+      return;
+    }
     const wasPlaying = this.state === "playing";
     const result = originalEndRound.call(this);
+    Online.localEdgeBuffer.clear();   // bỏ phím đòn bấm đúng khoảnh khắc KO, khỏi tự ra đòn đầu hiệp sau
     if (wasPlaying && this.mode === "online" && Online.role === "p1" && !Online.applyingControl) {
       Online.sendControl("round_end");
     }
