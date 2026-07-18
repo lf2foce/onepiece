@@ -459,6 +459,9 @@
     if (this.mode === "online" && Online.started && !Online.applyingControl) {
       if (Online.role !== "p1") {
         Online.setStatus("Đang chờ Player 1 bắt đầu hiệp tiếp theo…");
+        // Sảnh online đang ẩn lúc đấu -> phải báo ngay trên màn kết quả, kẻo nút như "chết đơ"
+        const resultText = document.getElementById("resultText");
+        if (resultText) resultText.textContent = "⏳ Chủ phòng (Player 1) sẽ bấm tiếp tục — chờ chút nhé…";
         return;
       }
       Online.sendControl("continue");
