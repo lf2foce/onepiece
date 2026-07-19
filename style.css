@@ -289,6 +289,23 @@ kbd {
 }
 .mode-opt.on { background: rgba(101,230,255,.16); border-color: rgba(101,230,255,.5); color: #fff; }
 .online-modelabel { font-size: clamp(14px, 2.6vw, 17px); font-weight: 800; color: #ffd23f; letter-spacing: .5px; }
+
+/* Tạo nhân vật bằng AI */
+.ai-card { width: min(560px, 94%); }
+.ai-lead { margin: 6px auto 14px; opacity: .82; font-size: clamp(13px, 2.4vw, 16px); }
+.ai-prompt {
+  width: 100%; border-radius: 12px; padding: 12px 14px; resize: none;
+  background: rgba(2,8,22,.72); border: 2px solid rgba(141,239,255,.38);
+  color: #fff; font: 500 clamp(14px,2.5vw,17px)/1.4 inherit; outline: none;
+}
+.ai-prompt:focus { border-color: #8defff; box-shadow: 0 0 0 3px rgba(101,230,255,.12); }
+.ai-suggest { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 12px 0; }
+.ai-chip {
+  padding: 6px 12px; border-radius: 999px; cursor: pointer; font: 700 13px inherit;
+  background: rgba(141,239,255,.10); border: 1px solid rgba(141,239,255,.35); color: #cfeaff;
+}
+.ai-chip:hover, .ai-chip:active { background: rgba(141,239,255,.22); color: #fff; }
+.ai-actions { display: flex; gap: 12px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
 .join-row { display: flex; gap: 12px; align-items: stretch; justify-content: center; flex-wrap: wrap; }
 #roomCodeInput {
   width: 170px;

@@ -1039,6 +1039,7 @@
       else if (s.id === "akainu" && this.drawAkainu) this.drawAkainu(flashing);
       else if (s.id === "whitebeard" && this.drawWhitebeard) this.drawWhitebeard(flashing);
       else if (s.id === "blackbeard" && this.drawBlackbeard) this.drawBlackbeard(flashing);
+      else if (this.drawGeneric) this.drawGeneric(flashing);   // nhân vật do AI sinh (generic, tham số hoá)
 
       ctx.restore();
     }
@@ -2512,6 +2513,9 @@
     window.OP_MOVES = MOVES;   // để adventure.js tra bộ chiêu theo nhân vật đã chọn
     window.OP_MAXHP = MAX_HP;  // để adventure.js hồi máu đúng mức, không hardcode 100
     Game.Projectile = Projectile;   // expose class đạn cho các file nhân vật hook vẽ
+    window.OP_ROSTER = ROSTER;         // để generic.js thêm nhân vật AI sinh vào danh sách chọn
+    window.OP_CHAR_INFO = CHAR_INFO;   // ..và thông tin hiển thị
+    window.OP_FIGHTER = Fighter;       // ..và gắn drawGeneric lên prototype
 
     // Các file nhân vật nạp TRƯỚC game.js nên không thấy OP_GAME lúc load
     // -> gọi hook của chúng ở đây (cài vẽ đạn riêng, hiệu ứng riêng)

@@ -153,7 +153,24 @@
       <div class="picker-card">
         <h2 id="pickerTitle" class="pick-h pick-p1">CHỌN TƯỚNG — NGƯỜI CHƠI 1</h2>
         <div class="char-grid" id="charGrid"></div>
+        <button class="btn btn-online" id="aiCreateBtn">✨ Tạo nhân vật bằng AI</button>
         <button class="btn btn-ghost" id="pickerClose">Đóng</button>
+      </div>
+    </div>
+
+    <!-- TẠO NHÂN VẬT BẰNG AI: mô tả 1 câu -> Claude sinh bộ chiêu + màu -> chơi được ngay -->
+    <div id="aiCreator" class="overlay hidden">
+      <div class="picker-card ai-card">
+        <h2 class="pick-h pick-p1">✨ TẠO NHÂN VẬT BẰNG AI</h2>
+        <p class="ai-lead">Mô tả nhân vật của bạn (một câu). AI sẽ sinh tên, màu và bộ chiêu.</p>
+        <textarea id="aiPrompt" class="ai-prompt" maxlength="160" rows="3"
+          placeholder="VD: Kiếm sĩ băng giá phóng lửa xanh, tóc bạc, áo choàng tím"></textarea>
+        <div class="ai-suggest" id="aiSuggest"></div>
+        <p id="aiStatus" class="online-status" aria-live="polite"></p>
+        <div class="ai-actions">
+          <button class="btn btn-online" id="aiGenBtn">⚡ Tạo nhân vật</button>
+          <button class="btn btn-ghost" id="aiCloseBtn">Đóng</button>
+        </div>
       </div>
     </div>
 
@@ -198,6 +215,7 @@
   <script src="character/whitebeard.js"></script>
   <script src="character/blackbeard.js"></script>
   <script src="game.js"></script>
+  <script src="character/generic.js"></script>
   <script src="adventure.js"></script>
   <script src="multiplayer.js"></script>
   <script src="touch.js"></script>
