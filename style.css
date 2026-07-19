@@ -273,6 +273,14 @@ kbd {
 .online-card h2 { font-size: clamp(28px, 6vw, 44px); color: #8defff; letter-spacing: 2px; }
 .online-lead { margin: 8px auto 22px; opacity: .78; max-width: 470px; }
 .online-actions { display: grid; gap: 18px; justify-items: center; }
+.online-char {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: 999px; cursor: pointer;
+  background: rgba(141,239,255,0.10); border: 2px solid rgba(141,239,255,0.4);
+  color: #fff; font-family: inherit; font-size: clamp(15px, 2.6vw, 18px);
+}
+.online-char b { color: #8defff; letter-spacing: 1px; }
+.online-char:hover, .online-char:active { background: rgba(141,239,255,0.2); }
 .join-row { display: flex; gap: 12px; align-items: stretch; justify-content: center; flex-wrap: wrap; }
 #roomCodeInput {
   width: 170px;

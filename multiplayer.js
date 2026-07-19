@@ -50,6 +50,7 @@
     room: null,
     socket: null,
     token: playerToken(),
+    myChar: "luffy",            // tướng người chơi tự chọn trong sảnh (áp cho vai được gán, WYSIWYG)
     pendingAction: null,
     reconnectTimer: 0,
     reconnectDelay: 1000,
@@ -76,6 +77,7 @@
       waiting.classList.add("hidden");
       lobby.classList.remove("hidden");
       if (roomInput) roomInput.value = new URLSearchParams(location.search).get("room") || "";
+      this.updateCharDisplay();
     },
 
     closeLobby() {
@@ -181,6 +183,8 @@
         waiting.classList.remove("hidden");
         actions.classList.add("hidden");
         this.setStatus(message.peerReady ? "Đã đủ hai người, đang chuẩn bị trận…" : "Đang chờ Player 2 vào phòng…");
+        // Áp tướng đã chọn cho đúng vai được gán, rồi báo server (WYSIWYG với nút chọn tướng)
+        if (this.role === "p1") Game.p1CharId = this.myChar; else Game.p2CharId = this.myChar;
         this.updateInviteUrl();
         this.sendSelection();
         // Khôi phục cho CẢ hai vai sau reload/nối lại (P1 reload trước đây làm reset trận vì
@@ -427,12 +431,51 @@
       history.replaceState(null, "", url);
     },
 
+    // Hiện tướng đang chọn — soi từ ô tướng ở menu (bảng chọn tướng luôn cập nhật ô này).
+    updateCharDisplay() {
+      const btn = byId("onlineCharBtn");
+      if (!btn) return;
+      const tile = byId("p1Select");
+      const emoji = tile?.querySelector(".fp-emoji")?.textContent || "👒";
+      const name = tile?.querySelector("b")?.textContent || "LUFFY";
+      btn.innerHTML = `${emoji} <b>${name}</b> · Chạm để đổi tướng ▾`;
+    },
+
+    // Mở bảng chọn tướng đầy đủ (dùng lại của menu). Đợi bảng đóng thì lưu lựa chọn;
+    // nếu đang trong phòng thì áp cho đúng vai + báo lại server.
+    chooseChar() {
+      const picker = byId("charPicker");
+      const p1tile = byId("p1Select");
+      if (!picker || !p1tile) return;
+      const obs = new MutationObserver(() => {
+        if (!picker.classList.contains("hidden")) return;
+        obs.disconnect();
+        this.myChar = Game.p1CharId;
+        this.updateCharDisplay();
+        if (this.role) {
+          if (this.role === "p1") Game.p1CharId = this.myChar; else Game.p2CharId = this.myChar;
+          this.sendSelection();
+        }
+      });
+      obs.observe(picker, { attributes: true, attributeFilter: ["class"] });
+      p1tile.click();   // mở bảng chọn (đủ roster) — pickFor="p1", lưu vào Game.p1CharId
+    },
+
     async copyInvite() {
       const url = new URL(location.href);
       url.searchParams.set("room", this.room);
+      const link = url.toString();
+      // Ưu tiên Share sheet của điện thoại (1 chạm gửi Zalo/Messenger); không có thì copy.
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: "ONE PIECE Đối Kháng", text: `Vào đấu với mình nhé! Mã phòng ${this.room}`, url: link });
+          this.setStatus("Đã mở bảng chia sẻ — chọn app để gửi.");
+          return;
+        } catch (_) { /* người dùng huỷ hoặc lỗi -> rơi xuống copy */ }
+      }
       try {
-        await navigator.clipboard.writeText(url.toString());
-        this.setStatus("Đã sao chép link — gửi cho Player 2 nhé!");
+        await navigator.clipboard.writeText(link);
+        this.setStatus("Đã chép link — dán vào Zalo/Messenger gửi Player 2.");
       } catch (_) {
         this.setStatus(`Gửi mã ${this.room} cho Player 2.`);
       }
@@ -445,6 +488,7 @@
   byId("createRoomBtn")?.addEventListener("click", () => Online.createRoom());
   byId("joinRoomBtn")?.addEventListener("click", () => Online.joinRoom(roomInput.value));
   byId("copyRoomBtn")?.addEventListener("click", () => Online.copyInvite());
+  byId("onlineCharBtn")?.addEventListener("click", () => Online.chooseChar());
   byId("onlineCloseBtn")?.addEventListener("click", () => Online.closeLobby());
   roomInput?.addEventListener("keydown", (event) => {
     if (event.key === "Enter") Online.joinRoom(roomInput.value);
