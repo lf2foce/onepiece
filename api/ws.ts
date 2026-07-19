@@ -163,6 +163,18 @@ function detachFromRoom(ws: GameSocket) {
   if (clients?.size === 0) localRooms.delete(ws.roomCode);
 }
 
+// Rời phòng HẲN: nhả slot (token + nhân vật) trong Redis để người khác vào thế.
+// Khác với đóng socket do ngắt tạm — lúc đó slot phải giữ để chính người đó nối lại.
+async function leaveRoom(ws: GameSocket) {
+  const code = ws.roomCode, role = ws.role, token = ws.playerToken;
+  if (!code || !role) return;
+  const redis = await getPublisher();
+  await redis.hDel(roomKey(code), [`${role}Token`, `${role}Char`]);
+  detachFromRoom(ws);
+  ws.roomCode = undefined;
+  await publishRoom(code, { type: "peer_status", role, connected: false, left: true }, token);
+}
+
 async function createRoom(ws: GameSocket, token: string) {
   const redis = await getPublisher();
   for (let attempt = 0; attempt < 8; attempt++) {
@@ -270,7 +282,8 @@ wss.on("connection", (rawSocket) => {
         const code = typeof message.room === "string" ? message.room.trim().toUpperCase() : "";
         if (!validRoom(code)) send(ws, { type: "error", message: "Mã phòng không hợp lệ." });
         else await joinRoom(ws, code, message.token as string);
-      } else await handleRoomMessage(ws, message);
+      } else if (message.type === "leave") await leaveRoom(ws);
+      else await handleRoomMessage(ws, message);
     } catch (error) {
       console.error("WebSocket message:", error);
       send(ws, { type: "error", message: "Server không xử lý được yêu cầu." });

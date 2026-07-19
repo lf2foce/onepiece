@@ -59,7 +59,9 @@
     lastInputSignature: "",
     lastInputSentAt: 0,
     lastSnapshotAt: 0,
+    lastAppliedSnapshotAt: 0,   // bỏ snapshot cũ đến muộn (dùng mốc "at" của P1)
     pendingSnapshot: null,
+    peerDropTimer: 0,           // hoãn báo "đối thủ mất kết nối" để reconnect chớp nhoáng khỏi nháy
     applyingControl: false,
     remoteHeld: { p1: {}, p2: {} },
     remoteEdges: { p1: new Set(), p2: new Set() },
@@ -146,6 +148,11 @@
     disconnect(intentional) {
       this.intentionallyClosed = intentional;
       clearTimeout(this.reconnectTimer);
+      clearTimeout(this.peerDropTimer);
+      // Rời hẳn: báo server nhả slot để người khác vào thế (khác với ngắt tạm — chỉ đóng socket).
+      if (intentional && this.room && this.socket?.readyState === WebSocket.OPEN) {
+        try { this.socket.send(JSON.stringify({ type: "leave", token: this.token })); } catch (_) {}
+      }
       if (this.socket) this.socket.close();
       this.socket = null;
       if (intentional) {
@@ -176,7 +183,9 @@
         this.setStatus(message.peerReady ? "Đã đủ hai người, đang chuẩn bị trận…" : "Đang chờ Player 2 vào phòng…");
         this.updateInviteUrl();
         this.sendSelection();
-        if (message.lastSnapshot && this.role === "p2") this.pendingSnapshot = message.lastSnapshot;
+        // Khôi phục cho CẢ hai vai sau reload/nối lại (P1 reload trước đây làm reset trận vì
+        // không tự khôi phục được — nay lấy ảnh chụp cuối của P1 từ server để dựng lại).
+        if (message.lastSnapshot) this.pendingSnapshot = message.lastSnapshot;
         return;
       }
       if (message.type === "ready") {
@@ -203,11 +212,23 @@
       if (message.type === "peer_status") {
         const peerRole = this.role === "p1" ? "p2" : "p1";
         if (message.role === peerRole) {
-          if (!message.connected) {
+          clearTimeout(this.peerDropTimer);
+          if (message.connected) {
+            this.setStatus("Đối thủ đã kết nối.");
+          } else if (message.left) {
+            // rời phòng hẳn — báo ngay, không cần đợi
             this.remoteHeld[peerRole] = {};
             this.remoteEdges[peerRole].clear();
+            this.setStatus("Đối thủ đã rời phòng.");
+          } else {
+            // ngắt tạm: đợi 2s mới báo — function tái tạo mỗi ~60s làm socket nối lại liên tục,
+            // báo ngay sẽ nhấp nháy "mất kết nối" dù người chơi vẫn online.
+            this.peerDropTimer = setTimeout(() => {
+              this.remoteHeld[peerRole] = {};
+              this.remoteEdges[peerRole].clear();
+              this.setStatus("Đối thủ mất kết nối — đang chờ nối lại…");
+            }, 2000);
           }
-          this.setStatus(message.connected ? "Đối thủ đã kết nối." : "Đối thủ mất kết nối — đang chờ nối lại…");
         }
         return;
       }
@@ -231,8 +252,8 @@
       this.localEdgeBuffer.clear();
       this.setConnected(true);
       if (Game.mode !== "online" || Game.state === "menu") Game.startMatch("online");
-      if (this.pendingSnapshot && this.role === "p2") {
-        this.applySnapshot(this.pendingSnapshot);
+      if (this.pendingSnapshot) {
+        this.applySnapshot(this.pendingSnapshot, true);   // true = khôi phục (cả P1 lẫn P2), ghi đè trận vừa reset
         this.pendingSnapshot = null;
       }
     },
@@ -305,8 +326,15 @@
       };
     },
 
-    applySnapshot(snapshot) {
-      if (!snapshot || !this.started || this.role !== "p2" || Game.mode !== "online") return;
+    applySnapshot(snapshot, restore) {
+      if (!snapshot || !this.started || Game.mode !== "online") return;
+      // Snapshot trực tiếp chỉ P2 áp; còn "restore" (sau reload) thì cả hai vai dựng lại từ ảnh chụp cuối của P1.
+      if (!restore && this.role !== "p2") return;
+      // Bỏ snapshot cũ đến muộn — "at" là đồng hồ của P1 (một nguồn) nên tăng đều, so được.
+      if (typeof snapshot.at === "number") {
+        if (!restore && snapshot.at <= this.lastAppliedSnapshotAt) return;
+        this.lastAppliedSnapshotAt = snapshot.at;
+      }
       const MOVES = window.OP_MOVES || {};
       const applyFighter = (fighter, data) => {
         if (!data || !ROSTER.has(data.id) || !MOVES[data.id]) return;
@@ -348,6 +376,11 @@
         projectile.dead = false;
         return projectile;
       });
+      // Khi khôi phục sau reload: dựng lại trạng thái ván + ẩn màn kết quả (kẹt ở "playing" nếu reload đúng lúc hết hiệp).
+      if (restore) {
+        Game.state = snapshot.state || "playing";
+        if (Game.hide) Game.hide("result");
+      }
     },
 
     sendControl(action) {
