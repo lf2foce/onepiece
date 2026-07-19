@@ -219,7 +219,7 @@
         return;
       }
       if (message.type === "control" && message.from !== this.role) {
-        this.receiveControl(message.action);
+        this.receiveControl(message.action, message.data);
         return;
       }
       if (message.type === "peer_status") {
@@ -482,24 +482,39 @@
       if (restore) { Game.state = snapshot.state || "playing"; if (Game.hide) Game.hide("result"); }
     },
 
-    sendControl(action) {
-      this.send({ type: "control", action });
+    sendControl(action, data) {
+      this.send({ type: "control", action, data });
     },
 
-    receiveControl(action) {
+    receiveControl(action, data) {
       if (action === "continue" && Game.mode === "online") {
         this.applyingControl = true;
         Game.onResultContinue();
         this.applyingControl = false;
-      } else if (action === "round_end" && Game.mode === "online" && Game.state === "playing") {
-        this.applyingControl = true;
-        Game.endRound();
-        this.applyingControl = false;
+      } else if (action === "round_end" && Game.mode === "online") {
+        this.applyRoundEnd(data);   // áp kết quả authority của P1, KHÔNG tự tính lại
       } else if (action === "quit" && Game.mode === "online") {
         this.applyingControl = true;
         Game.toMenu();
         this.applyingControl = false;
       }
+    },
+
+    // P2 áp Y NGUYÊN kết quả hiệp do P1 (authority) gửi: tỉ số + trạng thái + màn kết quả.
+    // Trước đây P2 tự chạy endRound -> tính winner từ HP đã hoà mềm (lệch) -> tỉ số/vô địch loạn,
+    // dẫn tới không sang hiệp được hoặc bị đá ra menu. Giờ P2 chỉ hiển thị, khỏi tính.
+    applyRoundEnd(data) {
+      if (!data) return;
+      if (typeof data.p1Wins === "number") Game.luffy.wins = data.p1Wins;
+      if (typeof data.p2Wins === "number") Game.zoro.wins = data.p2Wins;
+      Game.state = data.state || "roundover";   // đóng băng ván ngay như P1
+      const rt = document.getElementById("resultTitle");
+      const tx = document.getElementById("resultText");
+      const btn = document.getElementById("resultBtn");
+      if (rt && data.title) rt.textContent = data.title;
+      if (tx && typeof data.text === "string") tx.innerHTML = data.text;
+      if (btn) btn.textContent = "⏳ Chờ chủ phòng…";   // P2 không tự sang hiệp/chơi lại
+      setTimeout(() => { if (Game.state === "roundover" || Game.state === "matchover") Game.show("result"); }, 700);
     },
 
     setConnected(connected) {
@@ -658,7 +673,12 @@
     const result = originalEndRound.call(this);
     Online.localEdgeBuffer.clear();   // bỏ phím đòn bấm đúng khoảnh khắc KO, khỏi tự ra đòn đầu hiệp sau
     if (wasPlaying && this.mode === "online" && Online.role === "p1" && !Online.applyingControl) {
-      Online.sendControl("round_end");
+      // Gửi KẾT QUẢ đã tính (tỉ số + trạng thái + text màn kết quả) để P2 áp y nguyên
+      Online.sendControl("round_end", {
+        p1Wins: this.luffy.wins, p2Wins: this.zoro.wins, state: this.state,
+        title: document.getElementById("resultTitle")?.textContent,
+        text: document.getElementById("resultText")?.innerHTML,
+      });
     }
     return result;
   };
