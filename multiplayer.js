@@ -184,6 +184,7 @@
         this.role = message.role;
         this.room = message.room;
         if (message.mode) this.gameMode = message.mode;   // P2 theo kiểu chơi của phòng (chủ phòng đã chọn)
+        this.updateModeLabel();
         try { localStorage.setItem("gameDuduRoom", this.room); } catch (_) {}   // nhớ để vào lại tiếp tục
         this.pendingAction = { type: "join", room: this.room, token: this.token };
         roleBox.textContent = this.role === "p1" ? "PLAYER 1 — CHỦ PHÒNG" : "PLAYER 2";
@@ -358,18 +359,27 @@
         this.lastAppliedSnapshotAt = snapshot.at;
       }
       const MOVES = window.OP_MOVES || {};
-      const applyFighter = (fighter, data) => {
+      const applyFighter = (fighter, data, own) => {
         if (!data || !ROSTER.has(data.id) || !MOVES[data.id]) return;
         fighter.id = data.id;
         fighter.moves = MOVES[data.id];
+        const hitByAuthority = data.state === "hurt" || data.state === "ko";
+        // Fighter của CHÍNH máy này (P2 điều khiển zoro): GIỮ dự đoán local cho di chuyển,
+        // không để snapshot (cũ ~nửa RTT) kéo lùi -> đó là nguồn giật "nhân vật mình" thấy trên máy P2.
+        // Chỉ nhận chỉ số kết quả; khi TRÚNG ĐÒN mới áp đầy đủ để văng/gục cho đúng.
+        if (own && !restore && !hitByAuthority) {
+          for (const key of ["hp","meter","formT","wins","blocking"]) {
+            if (data[key] !== undefined) fighter[key] = data[key];
+          }
+          return;
+        }
         for (const key of ["vx","vy","facing","onGround","hp","meter","formT","state","hurtTimer","blocking","flash","combo","comboTimer","comboPop","wins","animTime","walkPhase"]) {
           if (data[key] !== undefined) fighter[key] = data[key];
         }
-        // Vị trí: snapshot luôn cũ hơn hiện tại ~nửa RTT, gán thẳng sẽ giật lùi.
-        // Hoà dần về vị trí authority (hết lệch sau ~2-3 snapshot); chỉ bật thẳng khi lệch quá xa.
+        // Đối thủ: hoà mềm về vị trí authority. Chính mình (lúc trúng đòn / khôi phục): bật thẳng.
         if (typeof data.x === "number" && typeof data.y === "number") {
           const ex = data.x - fighter.x, ey = data.y - fighter.y;
-          if (Math.abs(ex) > 140 || Math.abs(ey) > 140) { fighter.x = data.x; fighter.y = data.y; }
+          if (own || restore || Math.abs(ex) > 140 || Math.abs(ey) > 140) { fighter.x = data.x; fighter.y = data.y; }
           else { fighter.x += ex * 0.35; fighter.y += ey * 0.35; }
         }
         fighter._scripted = Boolean(data.scripted);
@@ -381,8 +391,8 @@
           formed: data.attack.formed, shaked: data.attack.shaked, hit: new Set(),
         } : null;
       };
-      applyFighter(Game.luffy, snapshot.p1);
-      applyFighter(Game.zoro, snapshot.p2);
+      applyFighter(Game.luffy, snapshot.p1, false);   // đối thủ của P2 -> áp đầy đủ + hoà mềm
+      applyFighter(Game.zoro, snapshot.p2, true);      // chính P2 điều khiển -> giữ dự đoán local
       Game.round = snapshot.round;
       Game.timeLeft = snapshot.timeLeft;
       Game.hitstop = snapshot.hitstop || 0;
@@ -439,16 +449,21 @@
       }
       const MOVES = window.OP_MOVES || {};
       const Enemy = window.OP_ENEMY;
-      const applyFighter = (f, d) => {
+      const applyFighter = (f, d, own) => {
         if (!d || !ROSTER.has(d.id) || !MOVES[d.id]) return;
         f.id = d.id; f.moves = MOVES[d.id];
+        const hitByAuthority = d.state === "hurt" || d.state === "ko";
+        if (own && !restore && !hitByAuthority) {   // nhân vật của chính P2: giữ dự đoán local, khỏi giật lùi
+          for (const k of ["hp","meter"]) if (d[k] !== undefined) f[k] = d[k];
+          return;
+        }
         for (const k of ["vx","vy","z","facing","onGround","hp","meter","state","hurtTimer","flash","animTime","walkPhase"]) {
           if (d[k] !== undefined) f[k] = d[k];
         }
         if (d.faceWant !== undefined) f._faceWant = d.faceWant;
-        if (typeof d.x === "number" && typeof d.y === "number") {   // hoà vị trí mềm, tránh giật lùi
+        if (typeof d.x === "number" && typeof d.y === "number") {
           const ex = d.x - f.x, ey = d.y - f.y;
-          if (Math.abs(ex) > 160 || Math.abs(ey) > 160) { f.x = d.x; f.y = d.y; }
+          if (own || restore || Math.abs(ex) > 160 || Math.abs(ey) > 160) { f.x = d.x; f.y = d.y; }
           else { f.x += ex * 0.4; f.y += ey * 0.4; }
         }
         const def = d.attack && f.moves[d.attack.key];
@@ -457,8 +472,8 @@
           spawnedCount: d.attack.spawnedCount, nextHit: d.attack.nextHit, isSuper: d.attack.isSuper, hit: new Set(),
         } : null;
       };
-      applyFighter(Game.luffy, snapshot.p1);
-      applyFighter(Game.zoro, snapshot.p2);
+      applyFighter(Game.luffy, snapshot.p1, false);   // đối thủ
+      applyFighter(Game.zoro, snapshot.p2, true);      // chính P2
       Game.timeLeft = snapshot.timeLeft;
       Game.cameraX = snapshot.cameraX;
       Game.waveIndex = snapshot.waveIndex;
@@ -539,6 +554,12 @@
       const url = new URL(location.href);
       url.searchParams.set("room", this.room);
       history.replaceState(null, "", url);
+    },
+
+    // Hiện kiểu chơi của phòng ở màn chờ (để P2 biết đang vào Đối kháng hay Đi bài).
+    updateModeLabel() {
+      const el = byId("onlineModeLabel");
+      if (el) el.textContent = this.gameMode === "adventure" ? "🗺️ Đi bài (co-op)" : "⚔️ Đối kháng";
     },
 
     // Hiện tướng đang chọn — soi từ ô tướng ở menu (bảng chọn tướng luôn cập nhật ô này).
