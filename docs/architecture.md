@@ -120,10 +120,15 @@ Trong `update()`, mỗi chế độ chọn `intentOf(fighter)` từ nguồn phù
 
 ### 6.7 Chống lag / giữ mượt
 
+- **⭐ Client-side prediction — KHÔNG sửa vị trí nhân vật của CHÍNH mình theo snapshot** (nguyên tắc vàng, thứ làm P2 hết giật):
+  - Snapshot của P1 luôn cũ hơn ~nửa RTT (input của P2 phải bay sang P1 → P1 tính → vị trí bay ngược về). Nếu áp vị trí đó cho nhân vật *do chính máy này điều khiển* thì mỗi ~70ms nó bị **kéo lùi** → giằng với dự đoán local 60fps → **rung/giật**.
+  - Máy của bạn biết input của mình **tức thì**, luôn *mới hơn* snapshot. Nên: **di chuyển nhân vật của mình → tin local**; snapshot chỉ áp cho những gì máy bạn không tự biết: **đối thủ** + **kết quả trúng đòn** (HP). Lúc TRÚNG ĐÒN (`state` = hurt/ko) mới bật vị trí theo authority để văng/gục đúng.
+  - Thực thi: `applyFighter(..., own)` trong `applySnapshot`/`applyAdvSnapshot` — `own=true` (fighter của máy này) thì bỏ qua chỉnh x/y, chỉ nhận HP/meter.
+  - *(Ví von: gõ Google Docs — chữ hiện ngay; đừng để server kéo con trỏ về chỗ 1 giây trước.)*
+- **Đối thủ: hiệu chỉnh mềm**: snapshot không gán thẳng x/y (giật lùi) mà **hoà 35%/snapshot**; chỉ bật thẳng khi lệch >140px.
 - **Throttle input**: chỉ gửi khi đổi phím / có đòn / heartbeat 120ms (không spam 60fps).
-- **Vị trí hiệu chỉnh mềm**: snapshot không gán thẳng x/y (sẽ giật lùi ~nửa RTT) mà **hoà 35%/snapshot**; chỉ bật thẳng khi lệch >140px.
 - **Buffer đòn qua khựng hình**: engine bỏ qua intent lúc hitstop/super-freeze nhưng vẫn xoá `justPressed` → phải giữ đòn đã bấm lại, kẻo hai máy diễn khác nhau.
-- **P2 không tự kết thúc hiệp**: chờ hiệu lệnh `round_end`/`continue` từ P1 (authority).
+- **P1 authority quyết kết quả hiệp/trận**: P2 KHÔNG tự chạy `endRound` (sẽ tính winner từ HP đã hoà → lệch tỉ số → kẹt/đá ra menu). P1 gửi `round_end` kèm **tỉ số + trạng thái + text**; P2 áp y nguyên qua `applyRoundEnd()`. Nút sang hiệp chỉ P1 bấm, P2 ăn theo.
 - **Region `sin1`**: ghim function về Singapore cho khớp Redis + gần người chơi VN — nếu không, tin đi vòng qua US mặc định.
 
 ### 6.8 Đánh đổi đã biết (không phải bug)
