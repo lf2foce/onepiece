@@ -1,4 +1,4 @@
-import { randomInt } from "node:crypto";
+import { randomInt, randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 import { createClient, type RedisClientType } from "redis";
 import { WebSocket, WebSocketServer } from "ws";
@@ -15,8 +15,13 @@ type GameSocket = WebSocket & {
 
 type WireEnvelope = {
   exceptToken?: string;
+  origin?: string;
   payload: Record<string, unknown>;
 };
+
+// ID riêng mỗi instance — để phân biệt tin do CHÍNH instance này phát (đã giao local rồi)
+// với tin từ instance khác (mới cần giao). Nhờ vậy same-instance khỏi vòng Redis.
+const INSTANCE_ID = randomUUID();
 
 const ROOM_TTL_SECONDS = 60 * 60;
 const MAX_MESSAGE_BYTES = 32 * 1024;
@@ -96,9 +101,20 @@ function rateAllowed(ws: GameSocket) {
   return ws.messagesInWindow <= 90;
 }
 
+// Giao tin cho các thành viên phòng ĐANG nằm trên instance này (không đụng Redis).
+function deliverLocal(code: string, payload: Record<string, unknown>, exceptToken?: string) {
+  for (const member of localRooms.get(code) || []) {
+    if (exceptToken && member.playerToken === exceptToken) continue;
+    send(member, payload);
+  }
+}
+
 async function publishRoom(code: string, payload: Record<string, unknown>, exceptToken?: string) {
+  // FAST-PATH: giao ngay cho người cùng instance (bỏ qua vòng tới Redis rồi quay lại
+  // — vốn tốn cả một RTT tới Singapore mỗi tin). Làm TRƯỚC await nên độ trễ local ~0.
+  deliverLocal(code, payload, exceptToken);
   const redis = await getPublisher();
-  const envelope: WireEnvelope = { payload, exceptToken };
+  const envelope: WireEnvelope = { payload, exceptToken, origin: INSTANCE_ID };
   await redis.publish(channelKey(code), JSON.stringify(envelope));
 }
 
@@ -115,10 +131,8 @@ async function ensureSubscriber() {
         try {
           const code = channel.slice(CHANNEL_PREFIX.length);
           const envelope = JSON.parse(raw) as WireEnvelope;
-          for (const member of localRooms.get(code) || []) {
-            if (envelope.exceptToken && member.playerToken === envelope.exceptToken) continue;
-            send(member, envelope.payload);
-          }
+          if (envelope.origin === INSTANCE_ID) return;   // tin của chính mình — đã giao local ở publishRoom
+          deliverLocal(code, envelope.payload, envelope.exceptToken);
         } catch (error) {
           console.error("Invalid Redis pub/sub payload:", error);
         }
