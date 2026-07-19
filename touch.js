@@ -61,6 +61,65 @@
   };
   document.querySelectorAll("#touchpad [data-key]").forEach(bind);
 
+  // --- Cần analog tròn (trái): đẩy hướng nào bật phím đó; đẩy chéo bật 2 phím -> nhảy tiến/lùi ---
+  const stick = document.getElementById("tpStick");
+  const knob = document.getElementById("tpKnob");
+  if (stick && knob) {
+    const DIRS = { up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD" };
+    const active = {};           // hướng -> mã phím đang giữ (đã đổi theo vai P1/P2)
+    let stickPid = null;
+    const R = 46;                // knob kéo tối đa (px)
+    const DEAD = 16;             // vùng chết mỗi trục: đẩy nhẹ chưa ăn, tránh trôi hướng
+
+    const setDir = (dir, on) => {
+      if (on && !active[dir]) {
+        active[dir] = codeForRole(DIRS[dir]);
+        fireKey("keydown", active[dir]);
+      } else if (!on && active[dir]) {
+        fireKey("keyup", active[dir]);
+        delete active[dir];
+      }
+    };
+    const releaseAll = () => { for (const d of Object.keys(active)) setDir(d, false); };
+
+    const update = (clientX, clientY) => {
+      const r = stick.getBoundingClientRect();
+      const dx = clientX - (r.left + r.width / 2);
+      const dy = clientY - (r.top + r.height / 2);
+      const mag = Math.hypot(dx, dy) || 1;
+      const cl = Math.min(mag, R) / mag;
+      knob.style.transform = `translate(${dx * cl}px, ${dy * cl}px)`;
+      setDir("right", dx > DEAD);
+      setDir("left",  dx < -DEAD);
+      setDir("up",    dy < -DEAD);   // đẩy lên = nhảy
+      setDir("down",  dy > DEAD);    // đẩy xuống = đỡ/hạ (và là "↓" cho biến thể chiêu)
+    };
+
+    stick.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      stickPid = e.pointerId;
+      stick.classList.add("active");
+      try { stick.setPointerCapture(e.pointerId); } catch (_) {}
+      update(e.clientX, e.clientY);
+    });
+    stick.addEventListener("pointermove", (e) => {
+      if (stickPid !== e.pointerId) return;
+      e.preventDefault();
+      update(e.clientX, e.clientY);
+    });
+    const endStick = (e) => {
+      if (stickPid !== e.pointerId) return;
+      stickPid = null;
+      stick.classList.remove("active");
+      knob.style.transform = "";
+      releaseAll();
+    };
+    stick.addEventListener("pointerup", endStick);
+    stick.addEventListener("pointercancel", endStick);
+    stick.addEventListener("lostpointercapture", endStick);
+    stick.addEventListener("contextmenu", (e) => e.preventDefault());
+  }
+
   // Nút ⏸ -> Escape (về menu, tiện đổi tướng/chế độ trên điện thoại)
   const pause = document.getElementById("tpPause");
   if (pause) {

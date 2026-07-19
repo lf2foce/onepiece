@@ -49,6 +49,8 @@ game-dudu/
 - `CONTROLS.p1` = WASD + F/G/H; `CONTROLS.p2` = mũi tên + `,`/`.`/`/`.
 - `humanIntents(which)` đọc từ 2 Set trên ra intent `{left,right,jump,block,close,ranged,special}`.
 - **Cảm ứng** (`touch.js`): mỗi nút HTML bắn `KeyboardEvent` ảo → **dùng lại y nguyên pipeline phím**, không đụng logic game. Khi máy là P2, tự đổi mã phím P1→P2 để engine nhận đúng đấu sĩ.
+  - Di chuyển dùng **cần analog tròn** (bên trái): đẩy theo trục để bật/tắt phím hướng, cho phép **đẩy chéo** (lên+phải = nhảy tiến). Có vùng chết mỗi trục để đẩy nhẹ không trôi hướng.
+  - Nút chiêu (phải) + nút Nhảy vẫn là nút bấm rời.
 
 ## 5. Các chế độ
 
