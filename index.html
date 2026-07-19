@@ -166,12 +166,8 @@
 
     <!-- ĐIỀU KHIỂN CẢM ỨNG (hiện trên điện thoại/màn cảm ứng). Mỗi nút bắn 1 phím ảo cho Người chơi 1. -->
     <div id="touchpad" class="hidden">
-      <div class="tp-dpad">
-        <button class="tp-btn tp-up"    data-key="KeyW" aria-label="Nhảy">▲</button>
-        <button class="tp-btn tp-left"  data-key="KeyA" aria-label="Trái">◀</button>
-        <button class="tp-btn tp-down"  data-key="KeyS" aria-label="Xuống/Đỡ">▼</button>
-        <button class="tp-btn tp-right" data-key="KeyD" aria-label="Phải">▶</button>
-      </div>
+      <!-- Cần analog: đẩy hướng nào ra hướng đó; đẩy chéo lên = nhảy tiến/lùi -->
+      <div class="tp-stick" id="tpStick"><div class="tp-knob" id="tpKnob"></div></div>
       <div class="tp-actions">
         <button class="tp-abtn tp-a-close" data-key="KeyF">Đấm</button>
         <button class="tp-abtn tp-a-ranged" data-key="KeyG">Xa</button>
@@ -186,6 +182,7 @@
   </div>
 
   <script src="character/luffy.js"></script>
+  <script src="character/luffy5.js"></script>
   <script src="character/zoro.js"></script>
   <script src="character/sanji.js"></script>
   <script src="character/shanks.js"></script>

@@ -360,20 +360,33 @@ kbd {
 .tp-btn:active, .tp-abtn:active, .tp-btn.pressed, .tp-abtn.pressed { transform: scale(0.92); }
 
 /* --- D-pad (trái) --- */
-.tp-dpad { position: absolute; left: calc(3.5% + env(safe-area-inset-left)); bottom: calc(6.5% + env(safe-area-inset-bottom)); width: 150px; height: 150px; }
-.tp-btn {
-  width: 50px; height: 50px; font-size: 21px;
-  background: rgba(255,255,255,0.20);
-  border: 2px solid rgba(255,255,255,0.36);
-  border-radius: 12px;
+/* --- Cần analog tròn (trái): đẩy hướng nào ra hướng đó; đẩy chéo lên = nhảy tiến/lùi --- */
+.tp-stick {
+  position: absolute;
+  left: calc(4% + env(safe-area-inset-left));
+  bottom: calc(7% + env(safe-area-inset-bottom));
+  width: 132px; height: 132px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.10);
+  border: 2px solid rgba(255,255,255,0.28);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
   backdrop-filter: blur(2px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.28);
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none; -webkit-user-select: none;
 }
-.tp-up    { left: 50px; top: 0; }
-.tp-left  { left: 0;    top: 50px; }
-.tp-down  { left: 50px; top: 100px; }
-.tp-right { left: 100px;top: 50px; }
-.tp-btn.pressed { background: rgba(255,210,60,0.6); border-color: #ffd23f; }
+.tp-stick.active { background: rgba(255,255,255,0.16); border-color: rgba(255,210,60,0.6); }
+.tp-knob {
+  position: absolute; left: 50%; top: 50%;
+  width: 60px; height: 60px; margin: -30px 0 0 -30px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.34);
+  border: 2px solid rgba(255,255,255,0.55);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  pointer-events: none;
+}
+.tp-stick.active .tp-knob { background: rgba(255,210,60,0.5); border-color: #ffd23f; }
 
 /* --- Nút chiêu (phải): Chiêu to nhất (góc ngón cái), rồi Đấm, Xa, Nhảy --- */
 .tp-actions { position: absolute; right: calc(3.5% + env(safe-area-inset-right)); bottom: calc(6.5% + env(safe-area-inset-bottom)); width: 236px; height: 210px; }

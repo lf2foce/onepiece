@@ -155,6 +155,7 @@
   //   ↓+skill     -> tuyệt chiêu lớn (100 Haki)    · ★ SIÊU CHIÊU 2
   const DOWN_MOVES = {
     luffy:  { close: "axe",      ranged: "rain",     special: "king" },
+    luffy5: { close: "mogura",   ranged: "dawnstorm", special: "bajrang" },
     zoro:   { close: "asura",    ranged: "pound108", special: "sanzen" },
     sanji:  { close: "partytable", ranged: "grill",  special: "ifrit" },
     shanks: { close: "haoshoku", ranged: "hakoku",   special: "storm" },
@@ -171,6 +172,8 @@
   const CHAR_INFO = {
     luffy:  { name: "LUFFY",  emoji: "👒", aura: "#ffd23f", warm: true,  title: "Mũ Rơm",     desc: "Cao su · Gear 2",
               form: { name: "GEAR 5 — NIKA", cry: "Gear Five!", c1: "#ffffff", c2: "#ffe9a8" } },
+    luffy5: { name: "LUFFY GEAR 5", emoji: "☀️", aura: "#fff3a6", warm: true, title: "Thần Mặt Trời Nika", desc: "Gear 5 · Tự do tuyệt đối",
+              form: { name: "NIKA — TRỐNG GIẢI PHÓNG", cry: "Drums of Liberation!", c1: "#ffffff", c2: "#ffe66d" } },
     zoro:   { name: "ZORO",   emoji: "⚔️", aura: "#bfffdb", warm: false, title: "Tam Đao",    desc: "Kiếm sĩ · Ashura",
               form: { name: "ASURA — VUA ĐỊA NGỤC", cry: "Asura!", c1: "#c9a0ff", c2: "#3a1f66" } },
     sanji:  { name: "SANJI",  emoji: "🚬", aura: "#ff7f00", warm: true,  title: "Hắc Cước",   desc: "Chân lửa · Diable",
@@ -190,7 +193,7 @@
     blackbeard: { name: "RÂU ĐEN", emoji: "🕳️", aura: "#a24bd6", warm: false, title: "Tứ Hoàng Bóng Tối", desc: "Yami Yami · Kurouzu",
               form: { name: "YAMI YAMI — SONG QUẢ", cry: "Zehahaha!", c1: "#b060ff", c2: "#1a0330" } },
   };
-  const ROSTER = ["luffy", "zoro", "sanji", "shanks", "ace", "aokiji", "sabo", "akainu", "whitebeard", "blackbeard"];
+  const ROSTER = ["luffy", "luffy5", "zoro", "sanji", "shanks", "ace", "aokiji", "sabo", "akainu", "whitebeard", "blackbeard"];
   const infoOf = id => CHAR_INFO[id] || CHAR_INFO.zoro;
 
   // ================================================================ PROJECTILE
@@ -243,7 +246,7 @@
         ctx.globalCompositeOperation = "lighter";
         const gr = this.w * 1.5;
         const g = ctx.createRadialGradient(0, 0, 4, 0, 0, gr);
-        const warm = this.owner && this.owner.id === "luffy";
+        const warm = this.owner && (this.owner.id === "luffy" || this.owner.id === "luffy5");
         g.addColorStop(0, warm ? "rgba(255,235,180,0.5)" : "rgba(235,255,240,0.6)");
         g.addColorStop(0.45, warm ? "rgba(255,130,30,0.5)" : "rgba(80,255,160,0.5)");
         g.addColorStop(1, warm ? "rgba(255,80,20,0)" : "rgba(40,220,120,0)");
@@ -595,7 +598,7 @@
 
       // Tia sét Haki Bá Vương dũng mãnh dập dềnh khi nộ đầy 100%
       if (this.meter >= 100 && Math.random() < 0.08) {
-        const col1 = this.id === "luffy" ? "#ff2a2a" : "#39d67e";
+        const col1 = this.id === "luffy" ? "#ff2a2a" : (this.id === "luffy5" ? "#fff4a3" : "#39d67e");
         const col2 = this.id === "luffy" ? "#000000" : "#ffffff";
         Game.sparks.push({
           kind: "lightning",
@@ -1026,6 +1029,7 @@
       const flashing = s.flash > 0 && Math.floor(s.flash/40) % 2 === 0;
 
       if (s.id === "luffy") this.drawLuffy(flashing);
+      else if (s.id === "luffy5" && this.drawLuffy5) this.drawLuffy5(flashing);
       else if (s.id === "zoro") this.drawZoro(flashing);
       else if (s.id === "sanji" && this.drawSanji) this.drawSanji(flashing);
       else if (s.id === "shanks" && this.drawShanks) this.drawShanks(flashing);
@@ -1192,6 +1196,7 @@
   // Load character extensions
   if (typeof window !== "undefined") {
     if (window.LuffyInit) window.LuffyInit(Fighter, MOVES);
+    if (window.Luffy5Init) window.Luffy5Init(Fighter, MOVES);
     if (window.ZoroInit) window.ZoroInit(Fighter, MOVES);
     if (window.SanjiInit) window.SanjiInit(Fighter, MOVES);
     if (window.ShanksInit) window.ShanksInit(Fighter, MOVES);
@@ -1735,6 +1740,7 @@
           if (this.addIceShatter && p.d.kind === "pheasant") this.addIceShatter(p.x, p.y);
           if (this.addAceInferno && (p.d.kind === "dragon_fist" || p.d.kind === "fire_dragon")) this.addAceInferno(p.x, p.y);
           if (this.addMagmaBurst && (p.d.kind === "funka" || p.d.kind === "magma_hound")) this.addMagmaBurst(p.x, p.y);
+          if (this.addNikaImpact && (p.d.kind === "nika_fist" || p.d.kind === "nika_lightning")) this.addNikaImpact(p.x, p.y);
           if (p.d.super) { this.flashScreen = 1.3; this.hitstop = Math.max(this.hitstop, 150); this.addHitSpark(p.x, p.y, false, true); }
           p.dead = true;
         }
@@ -1801,6 +1807,9 @@
         }
         if (this.addMagmaBurst && attacker.id === "akainu" && d.key === "meigo") {
           this.addMagmaBurst(defender.x, defender.y - 70);
+        }
+        if (this.addNikaImpact && attacker.id === "luffy5" && (d.key === "mogura" || d.key === "bajrang")) {
+          this.addNikaImpact(defender.x, defender.y - 80);
         }
 
         const dir = attacker.facing;
@@ -2508,6 +2517,7 @@
     // -> gọi hook của chúng ở đây (cài vẽ đạn riêng, hiệu ứng riêng)
     if (window.SanjiHook) window.SanjiHook(Game);
     if (window.ShanksHook) window.ShanksHook(Game);
+    if (window.Luffy5Hook) window.Luffy5Hook(Game);
   }
 
   // ---- Hook debug/chụp ảnh (chỉ chạy trong trình duyệt, không ảnh hưởng lúc chơi thường) ----

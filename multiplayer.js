@@ -15,7 +15,7 @@
   });
   const HELD_KEYS = ["left", "right", "jump", "block"];
   const EDGE_KEYS = ["close", "ranged", "special"];
-  const ROSTER = new Set(["luffy", "zoro", "sanji", "shanks", "ace", "aokiji", "sabo", "akainu", "whitebeard", "blackbeard"]);
+  const ROSTER = new Set(["luffy", "luffy5", "zoro", "sanji", "shanks", "ace", "aokiji", "sabo", "akainu", "whitebeard", "blackbeard"]);
 
   const byId = (id) => document.getElementById(id);
   const lobby = byId("onlineLobby");
