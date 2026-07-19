@@ -51,6 +51,7 @@
     socket: null,
     token: playerToken(),
     myChar: "luffy",            // tướng người chơi tự chọn trong sảnh (áp cho vai được gán, WYSIWYG)
+    gameMode: "versus",         // "versus" (đối kháng 1v1) | "adventure" (đi bài co-op); do chủ phòng chọn
     pendingAction: null,
     reconnectTimer: 0,
     reconnectDelay: 1000,
@@ -90,7 +91,7 @@
     },
 
     createRoom() {
-      this.begin({ type: "create", token: this.token });
+      this.begin({ type: "create", token: this.token, mode: this.gameMode });
     },
 
     joinRoom(code) {
@@ -182,6 +183,7 @@
       if (message.type === "assigned") {
         this.role = message.role;
         this.room = message.room;
+        if (message.mode) this.gameMode = message.mode;   // P2 theo kiểu chơi của phòng (chủ phòng đã chọn)
         try { localStorage.setItem("gameDuduRoom", this.room); } catch (_) {}   // nhớ để vào lại tiếp tục
         this.pendingAction = { type: "join", room: this.room, token: this.token };
         roleBox.textContent = this.role === "p1" ? "PLAYER 1 — CHỦ PHÒNG" : "PLAYER 2";
@@ -204,7 +206,7 @@
         return;
       }
       if (message.type === "start") {
-        this.startGame(message.p1Char, message.p2Char);
+        this.startGame(message.p1Char, message.p2Char, message.mode);
         return;
       }
       if (message.type === "input" && message.from && message.from !== this.role) {
@@ -212,7 +214,8 @@
         return;
       }
       if (message.type === "snapshot" && message.from === "p1" && this.role === "p2") {
-        this.applySnapshot(message.state);
+        if (this.gameMode === "adventure") this.applyAdvSnapshot(message.state);
+        else this.applySnapshot(message.state);
         return;
       }
       if (message.type === "control" && message.from !== this.role) {
@@ -251,8 +254,9 @@
       this.send({ type: "selection", charId: ROSTER.has(charId) ? charId : (this.role === "p1" ? "luffy" : "zoro") });
     },
 
-    startGame(p1Char, p2Char) {
+    startGame(p1Char, p2Char, mode) {
       if (!ROSTER.has(p1Char) || !ROSTER.has(p2Char)) return;
+      this.gameMode = mode === "adventure" ? "adventure" : "versus";
       Game.p1CharId = p1Char;
       Game.p2CharId = p2Char;
       lobby.classList.add("hidden");
@@ -261,9 +265,16 @@
       this.started = true;
       this.localEdgeBuffer.clear();
       this.setConnected(true);
-      if (Game.mode !== "online" || Game.state === "menu") Game.startMatch("online");
+      if (this.gameMode === "adventure") {
+        Game.onlineCoop = true;   // cờ để adventure.js lấy input đối thủ qua mạng
+        if (Game.mode !== "adventure" || Game.state === "menu") Game.startMatch("adventure");
+      } else {
+        Game.onlineCoop = false;
+        if (Game.mode !== "online" || Game.state === "menu") Game.startMatch("online");
+      }
       if (this.pendingSnapshot) {
-        this.applySnapshot(this.pendingSnapshot, true);   // true = khôi phục (cả P1 lẫn P2), ghi đè trận vừa reset
+        const apply = this.gameMode === "adventure" ? this.applyAdvSnapshot : this.applySnapshot;
+        apply.call(this, this.pendingSnapshot, true);   // khôi phục sau reload/nối lại
         this.pendingSnapshot = null;
       }
     },
@@ -301,11 +312,12 @@
     },
 
     afterUpdate(game) {
-      if (!this.started || this.role !== "p1" || game.mode !== "online") return;
+      if (!this.started || this.role !== "p1") return;   // chỉ P1 (authority) phát snapshot
       const now = performance.now();
       if (now - this.lastSnapshotAt < 70) return;
       this.lastSnapshotAt = now;
-      this.send({ type: "snapshot", state: this.makeSnapshot(game) });
+      const state = this.gameMode === "adventure" ? this.makeAdvSnapshot(game) : this.makeSnapshot(game);
+      this.send({ type: "snapshot", state });
     },
 
     makeSnapshot(game) {
@@ -391,6 +403,83 @@
         Game.state = snapshot.state || "playing";
         if (Game.hide) Game.hide("result");
       }
+    },
+
+    // ---- Snapshot cho ĐI BÀI (co-op): gói thêm quái, camera, đợt spawn, trục Z ----
+    makeAdvSnapshot(game) {
+      const fighter = (v) => ({
+        id: v.id, x: v.x, y: v.y, z: v.z, vx: v.vx, vy: v.vy, facing: v.facing,
+        onGround: v.onGround, hp: v.hp, meter: v.meter, state: v.state, hurtTimer: v.hurtTimer,
+        flash: v.flash, animTime: v.animTime, walkPhase: v.walkPhase, faceWant: v._faceWant,
+        attack: v.attack ? {
+          key: v.attack.def.key, elapsed: v.attack.elapsed, phase: v.attack.phase,
+          spawned: v.attack.spawned, spawnedCount: v.attack.spawnedCount,
+          nextHit: v.attack.nextHit, isSuper: v.attack.isSuper,
+        } : null,
+      });
+      return {
+        at: Date.now(), timeLeft: game.timeLeft, cameraX: game.cameraX, waveIndex: game.waveIndex,
+        hitstop: game.hitstop, flashScreen: game.flashScreen, state: game.state, announce: game.announce,
+        waves: (game.waves || []).map((w) => ({ spawned: w.spawned, cleared: w.cleared })),
+        p1: fighter(game.luffy), p2: fighter(game.zoro),
+        enemies: (game.enemies || []).map((e) => ({
+          id: e.id, type: e.type, x: e.x, y: e.y, z: e.z, jumpY: e.jumpY, vx: e.vx, vy: e.vy,
+          facing: e.facing, onGround: e.onGround, hp: e.hp, state: e.state, animTime: e.animTime,
+          walkPhase: e.walkPhase, hurtTimer: e.hurtTimer, flash: e.flash,
+          attack: e.attack ? { elapsed: e.attack.elapsed, phase: e.attack.phase } : null,
+        })),
+      };
+    },
+
+    applyAdvSnapshot(snapshot, restore) {
+      if (!snapshot || !this.started || this.role !== "p2") return;
+      if (typeof snapshot.at === "number") {
+        if (!restore && snapshot.at <= this.lastAppliedSnapshotAt) return;
+        this.lastAppliedSnapshotAt = snapshot.at;
+      }
+      const MOVES = window.OP_MOVES || {};
+      const Enemy = window.OP_ENEMY;
+      const applyFighter = (f, d) => {
+        if (!d || !ROSTER.has(d.id) || !MOVES[d.id]) return;
+        f.id = d.id; f.moves = MOVES[d.id];
+        for (const k of ["vx","vy","z","facing","onGround","hp","meter","state","hurtTimer","flash","animTime","walkPhase"]) {
+          if (d[k] !== undefined) f[k] = d[k];
+        }
+        if (d.faceWant !== undefined) f._faceWant = d.faceWant;
+        if (typeof d.x === "number" && typeof d.y === "number") {   // hoà vị trí mềm, tránh giật lùi
+          const ex = d.x - f.x, ey = d.y - f.y;
+          if (Math.abs(ex) > 160 || Math.abs(ey) > 160) { f.x = d.x; f.y = d.y; }
+          else { f.x += ex * 0.4; f.y += ey * 0.4; }
+        }
+        const def = d.attack && f.moves[d.attack.key];
+        f.attack = def ? {
+          def, elapsed: d.attack.elapsed, phase: d.attack.phase, spawned: d.attack.spawned,
+          spawnedCount: d.attack.spawnedCount, nextHit: d.attack.nextHit, isSuper: d.attack.isSuper, hit: new Set(),
+        } : null;
+      };
+      applyFighter(Game.luffy, snapshot.p1);
+      applyFighter(Game.zoro, snapshot.p2);
+      Game.timeLeft = snapshot.timeLeft;
+      Game.cameraX = snapshot.cameraX;
+      Game.waveIndex = snapshot.waveIndex;
+      Game.hitstop = snapshot.hitstop || 0;
+      Game.flashScreen = snapshot.flashScreen || 0;
+      if (snapshot.announce !== undefined) Game.announce = snapshot.announce;
+      if (snapshot.waves && Game.waves) {
+        for (let i = 0; i < snapshot.waves.length && i < Game.waves.length; i++) {
+          Game.waves[i].spawned = snapshot.waves[i].spawned;
+          Game.waves[i].cleared = snapshot.waves[i].cleared;
+        }
+      }
+      if (Enemy && Array.isArray(snapshot.enemies)) {   // dựng lại danh sách quái theo authority của P1
+        Game.enemies = snapshot.enemies.map((d) => {
+          const e = new Enemy(d.id, d.x, d.type);
+          Object.assign(e, d);
+          e.attack = d.attack ? { elapsed: d.attack.elapsed, phase: d.attack.phase, hit: new Set() } : null;
+          return e;
+        });
+      }
+      if (restore) { Game.state = snapshot.state || "playing"; if (Game.hide) Game.hide("result"); }
     },
 
     sendControl(action) {
@@ -495,6 +584,12 @@
   byId("joinRoomBtn")?.addEventListener("click", () => Online.joinRoom(roomInput.value));
   byId("copyRoomBtn")?.addEventListener("click", () => Online.copyInvite());
   byId("onlineCharBtn")?.addEventListener("click", () => Online.chooseChar());
+  byId("onlineModePick")?.querySelectorAll(".mode-opt").forEach((b) => {
+    b.addEventListener("click", () => {
+      Online.gameMode = b.dataset.gm === "adventure" ? "adventure" : "versus";
+      byId("onlineModePick").querySelectorAll(".mode-opt").forEach((x) => x.classList.toggle("on", x === b));
+    });
+  });
   byId("onlineCloseBtn")?.addEventListener("click", () => Online.closeLobby());
   roomInput?.addEventListener("keydown", (event) => {
     if (event.key === "Enter") Online.joinRoom(roomInput.value);

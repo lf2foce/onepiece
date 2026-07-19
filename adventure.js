@@ -371,9 +371,18 @@
           this.endRound(); // Hết giờ tự động thua cuộc
         }
 
-        // Đọc phím điều khiển độc lập cho 2 người chơi cùng bàn phím (Clone lại đối tượng để tránh can thiệp trực tiếp)
-        const i1 = Object.assign({}, this.humanIntents("p1"));
-        const i2 = Object.assign({}, this.humanIntents("p2"));
+        // Đọc phím 2 người. Co-op ONLINE: input của mình lấy local + gửi đi, input đối thủ lấy qua mạng.
+        let i1, i2;
+        const O = this.onlineCoop && window.OP_ONLINE;
+        if (O && O.started && O.role) {
+          const localIntent = Object.assign({}, this.humanIntents(O.role));
+          O.sendInput(O.role, localIntent);
+          if (O.role === "p1") { i1 = localIntent; i2 = O.remoteIntent("p2"); }
+          else { i1 = O.remoteIntent("p1"); i2 = localIntent; }
+        } else {
+          i1 = Object.assign({}, this.humanIntents("p1"));   // 2 người cùng bàn phím
+          i2 = Object.assign({}, this.humanIntents("p2"));
+        }
 
         // ---- ĐIỀU KHIỂN CHIỀU SÂU Z-AXIS LÁCH LÀN (W/S cho Luffy P1, Up/Down cho Zoro P2) ----
         for (const p of [this.luffy, this.zoro]) {

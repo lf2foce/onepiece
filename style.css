@@ -281,6 +281,13 @@ kbd {
 }
 .online-char b { color: #8defff; letter-spacing: 1px; }
 .online-char:hover, .online-char:active { background: rgba(141,239,255,0.2); }
+.online-modepick { display: inline-flex; gap: 6px; padding: 4px; border-radius: 999px; background: rgba(2,8,22,.5); }
+.mode-opt {
+  padding: 8px 16px; border-radius: 999px; cursor: pointer; font-family: inherit;
+  font-size: clamp(13px, 2.3vw, 16px); font-weight: 800;
+  background: transparent; border: 2px solid transparent; color: #bcd7e6;
+}
+.mode-opt.on { background: rgba(101,230,255,.16); border-color: rgba(101,230,255,.5); color: #fff; }
 .join-row { display: flex; gap: 12px; align-items: stretch; justify-content: center; flex-wrap: wrap; }
 #roomCodeInput {
   width: 170px;

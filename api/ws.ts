@@ -176,15 +176,17 @@ async function leaveRoom(ws: GameSocket) {
   await publishRoom(code, { type: "peer_status", role, connected: false, left: true }, token);
 }
 
-async function createRoom(ws: GameSocket, token: string) {
+async function createRoom(ws: GameSocket, token: string, mode: string) {
+  const gameMode = mode === "adventure" ? "adventure" : "versus";
   const redis = await getPublisher();
   for (let attempt = 0; attempt < 8; attempt++) {
     const code = makeRoomCode();
     const created = await redis.hSetNX(roomKey(code), "p1Token", token);
     if (!created) continue;
+    await redis.hSet(roomKey(code), "mode", gameMode);
     await redis.expire(roomKey(code), ROOM_TTL_SECONDS);
     await attachToRoom(ws, code, "p1", token);
-    send(ws, { type: "assigned", room: code, role: "p1" });
+    send(ws, { type: "assigned", room: code, role: "p1", mode: gameMode });
     return;
   }
   send(ws, { type: "error", message: "Không tạo được mã phòng, hãy thử lại." });
@@ -216,6 +218,7 @@ async function joinRoom(ws: GameSocket, code: string, token: string) {
     type: "assigned",
     room: code,
     role,
+    mode: latest.mode || "versus",
     peerReady: Boolean(latest.p1Token && latest.p2Token),
     lastSnapshot: latest.lastSnapshot ? JSON.parse(latest.lastSnapshot) : undefined,
   });
@@ -235,6 +238,7 @@ async function handleSelection(ws: GameSocket, charId: unknown) {
   if (room.p1Char && room.p2Char) {
     await publishRoom(ws.roomCode, {
       type: "start",
+      mode: room.mode || "versus",
       p1Char: room.p1Char,
       p2Char: room.p2Char,
     });
@@ -278,7 +282,7 @@ wss.on("connection", (rawSocket) => {
         send(ws, { type: "error", message: "Player token không hợp lệ." });
         return;
       }
-      if (message.type === "create") await createRoom(ws, message.token as string);
+      if (message.type === "create") await createRoom(ws, message.token as string, typeof message.mode === "string" ? message.mode : "versus");
       else if (message.type === "join") {
         const code = typeof message.room === "string" ? message.room.trim().toUpperCase() : "";
         if (!validRoom(code)) send(ws, { type: "error", message: "Mã phòng không hợp lệ." });
