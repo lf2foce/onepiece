@@ -360,38 +360,41 @@ kbd {
 .tp-btn:active, .tp-abtn:active, .tp-btn.pressed, .tp-abtn.pressed { transform: scale(0.92); }
 
 /* --- D-pad (trái) --- */
-.tp-dpad { position: absolute; left: calc(3.5% + env(safe-area-inset-left)); bottom: calc(7% + env(safe-area-inset-bottom)); width: 174px; height: 174px; }
+.tp-dpad { position: absolute; left: calc(3.5% + env(safe-area-inset-left)); bottom: calc(6.5% + env(safe-area-inset-bottom)); width: 192px; height: 192px; }
 .tp-btn {
-  width: 58px; height: 58px; font-size: 24px;
-  background: rgba(255,255,255,0.16);
-  border: 2px solid rgba(255,255,255,0.28);
-  border-radius: 12px;
+  width: 64px; height: 64px; font-size: 26px;
+  background: rgba(255,255,255,0.20);
+  border: 2px solid rgba(255,255,255,0.36);
+  border-radius: 14px;
   backdrop-filter: blur(2px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.28);
 }
-.tp-up    { left: 58px; top: 0; }
-.tp-left  { left: 0;    top: 58px; }
-.tp-down  { left: 58px; top: 116px; }
-.tp-right { left: 116px;top: 58px; }
-.tp-btn.pressed { background: rgba(255,210,60,0.55); border-color: #ffd23f; }
+.tp-up    { left: 64px; top: 0; }
+.tp-left  { left: 0;    top: 64px; }
+.tp-down  { left: 64px; top: 128px; }
+.tp-right { left: 128px;top: 64px; }
+.tp-btn.pressed { background: rgba(255,210,60,0.6); border-color: #ffd23f; }
 
-/* --- Nút chiêu (phải) --- */
-.tp-actions { position: absolute; right: calc(3.5% + env(safe-area-inset-right)); bottom: calc(7% + env(safe-area-inset-bottom)); width: 210px; height: 190px; }
+/* --- Nút chiêu (phải): Chiêu to nhất (góc ngón cái), rồi Đấm, Xa, Nhảy --- */
+.tp-actions { position: absolute; right: calc(3.5% + env(safe-area-inset-right)); bottom: calc(6.5% + env(safe-area-inset-bottom)); width: 236px; height: 210px; }
 .tp-abtn {
-  width: 70px; height: 70px; border-radius: 50%; font-size: 15px;
-  border: 2px solid rgba(255,255,255,0.32);
-  text-shadow: 0 1px 2px rgba(0,0,0,.6);
+  width: 78px; height: 78px; border-radius: 50%; font-size: 16px;
+  border: 2px solid rgba(255,255,255,0.40);
+  text-shadow: 0 1px 2px rgba(0,0,0,.7);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
 }
-.tp-a-close   { right: 122px; bottom: 4px;   background: rgba(70,140,255,0.42); }
-.tp-a-ranged  { right: 60px;  bottom: 70px;  background: rgba(60,200,120,0.42); }
-.tp-a-special { right: 2px;   bottom: 4px;   background: rgba(255,80,80,0.5); width: 78px; height: 78px; }
-.tp-a-jump    { right: 100px; bottom: 128px; width: 54px; height: 54px; font-size: 12px; background: rgba(255,255,255,0.16); }
+.tp-a-special { right: 2px;   bottom: 2px;   width: 90px; height: 90px; font-size: 17px; background: rgba(255,72,72,0.6); }
+.tp-a-close   { right: 104px; bottom: 6px;   background: rgba(70,140,255,0.55); }
+.tp-a-ranged  { right: 44px;  bottom: 96px;  background: rgba(50,200,120,0.55); }
+.tp-a-jump    { right: 126px; bottom: 108px; width: 60px; height: 60px; font-size: 13px; background: rgba(255,255,255,0.20); }
 .tp-abtn.pressed { filter: brightness(1.5); border-color: #fff; }
 
 .tp-mini {
-  top: calc(3% + env(safe-area-inset-top)); right: calc(3.5% + env(safe-area-inset-right));
-  width: 42px; height: 42px; border-radius: 10px; font-size: 17px;
-  background: rgba(0,0,0,0.4);
-  border: 1px solid rgba(255,255,255,0.22);
+  top: calc(15% + env(safe-area-inset-top)); right: calc(3.5% + env(safe-area-inset-right));
+  width: 46px; height: 46px; border-radius: 12px; font-size: 18px;
+  background: rgba(0,0,0,0.45);
+  border: 1px solid rgba(255,255,255,0.28);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
 }
 
 /* Nhắc xoay ngang: chỉ hiện khi thiết bị cảm ứng đang cầm DỌC */
