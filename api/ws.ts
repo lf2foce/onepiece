@@ -49,6 +49,7 @@ async function getPublisher() {
   if (!publisherPromise) {
     const client = createClient({
       url: redisUrl(),
+      pingInterval: 30000,   // PING 30s/lần: giữ kết nối Upstash sống + phát hiện đứt để tự nối+subscribe lại
       socket: {
         keepAlive: true,
         reconnectStrategy: (retries) => Math.min(1000 + retries * 500, 8000),

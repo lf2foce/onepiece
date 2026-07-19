@@ -76,7 +76,11 @@
       actions.classList.remove("hidden");
       waiting.classList.add("hidden");
       lobby.classList.remove("hidden");
-      if (roomInput) roomInput.value = new URLSearchParams(location.search).get("room") || "";
+      // Điền sẵn mã: ưu tiên link mời (?room=), sau đó tới phòng gần nhất (để vào lại tiếp tục)
+      if (roomInput) {
+        let last = ""; try { last = localStorage.getItem("gameDuduRoom") || ""; } catch (_) {}
+        roomInput.value = new URLSearchParams(location.search).get("room") || last;
+      }
       this.updateCharDisplay();
     },
 
@@ -158,6 +162,7 @@
       if (this.socket) this.socket.close();
       this.socket = null;
       if (intentional) {
+        try { localStorage.removeItem("gameDuduRoom"); } catch (_) {}   // rời hẳn -> quên phòng
         this.pendingAction = null;
         this.room = null;
         this.role = null;
@@ -177,6 +182,7 @@
       if (message.type === "assigned") {
         this.role = message.role;
         this.room = message.room;
+        try { localStorage.setItem("gameDuduRoom", this.room); } catch (_) {}   // nhớ để vào lại tiếp tục
         this.pendingAction = { type: "join", room: this.room, token: this.token };
         roleBox.textContent = this.role === "p1" ? "PLAYER 1 — CHỦ PHÒNG" : "PLAYER 2";
         roomBox.textContent = this.room;
