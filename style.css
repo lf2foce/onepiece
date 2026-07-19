@@ -360,19 +360,19 @@ kbd {
 .tp-btn:active, .tp-abtn:active, .tp-btn.pressed, .tp-abtn.pressed { transform: scale(0.92); }
 
 /* --- D-pad (trái) --- */
-.tp-dpad { position: absolute; left: calc(3.5% + env(safe-area-inset-left)); bottom: calc(6.5% + env(safe-area-inset-bottom)); width: 192px; height: 192px; }
+.tp-dpad { position: absolute; left: calc(3.5% + env(safe-area-inset-left)); bottom: calc(6.5% + env(safe-area-inset-bottom)); width: 150px; height: 150px; }
 .tp-btn {
-  width: 64px; height: 64px; font-size: 26px;
+  width: 50px; height: 50px; font-size: 21px;
   background: rgba(255,255,255,0.20);
   border: 2px solid rgba(255,255,255,0.36);
-  border-radius: 14px;
+  border-radius: 12px;
   backdrop-filter: blur(2px);
   box-shadow: 0 2px 8px rgba(0,0,0,0.28);
 }
-.tp-up    { left: 64px; top: 0; }
-.tp-left  { left: 0;    top: 64px; }
-.tp-down  { left: 64px; top: 128px; }
-.tp-right { left: 128px;top: 64px; }
+.tp-up    { left: 50px; top: 0; }
+.tp-left  { left: 0;    top: 50px; }
+.tp-down  { left: 50px; top: 100px; }
+.tp-right { left: 100px;top: 50px; }
 .tp-btn.pressed { background: rgba(255,210,60,0.6); border-color: #ffd23f; }
 
 /* --- Nút chiêu (phải): Chiêu to nhất (góc ngón cái), rồi Đấm, Xa, Nhảy --- */
@@ -410,7 +410,9 @@ kbd {
   }
 }
 /* Trên thiết bị cảm ứng: bỏ bo góc (nút tràn ra mép cho gọn) */
-body.touch-device #game { border-radius: 0; }
+/* Thiết bị cảm ứng: canvas lấp đầy màn hình (tràn hết bề ngang, không viền đen 2 bên).
+   Đổi lại hình hơi giãn ngang trên máy rộng hơn 16:9 — nhưng giữ nguyên HUD, không cắt xén. */
+body.touch-device #game { width: 100vw; height: 100vh; border-radius: 0; box-shadow: none; }
 
 /* iOS/Android: chặn kéo-nảy (rubber-band), pull-to-refresh, chọn chữ khi chơi */
 html, body { overscroll-behavior: none; }
