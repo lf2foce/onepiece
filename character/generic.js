@@ -293,7 +293,7 @@
       const { spec, ai } = await window.OP_AICHAR.generate(desc);
       const reg = window.OP_AICHAR.register(spec);
       genBtn.disabled = false;
-      if (status) status.textContent = `Đã tạo ${reg.emoji} ${reg.name}${ai ? "" : " (bản thử — thêm API key để dùng Claude)"}! Đang mở bảng chọn…`;
+      if (status) status.textContent = `Đã tạo ${reg.emoji} ${reg.name}${ai ? "" : " (bản thử — thêm GEMINI_API_KEY để dùng AI thật)"}! Đang mở bảng chọn…`;
       setTimeout(closeCreator, 900);
     });
   }
