@@ -5,7 +5,7 @@
  */
 import { GoogleGenAI } from "@google/genai";
 
-const MODEL = "gemini-3.0-flash-preview";
+const MODEL = "gemini-3.5-flash-lite";
 
 const SYSTEM = `Bạn thiết kế nhân vật cho game đối kháng 2D phong cách One Piece.
 Từ mô tả của người dùng, trả về DUY NHẤT một object JSON đúng schema (không markdown, không giải thích):
