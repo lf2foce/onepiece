@@ -51,6 +51,7 @@ html, body {
   z-index: 10;
 }
 .overlay.hidden { display: none; }
+.hidden { display: none !important; }   /* tiện ích ẩn dùng chung (nút đổi tướng, v.v.) */
 
 .menu-card, .result-card {
   width: min(760px, 94%);

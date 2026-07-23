@@ -235,13 +235,24 @@ async function handleSelection(ws: GameSocket, charId: unknown) {
   await redis.hSet(key, `${ws.role}Char`, charId);
   await redis.expire(key, ROOM_TTL_SECONDS);
   const room = await redis.hGetAll(key);
+  // KHÔNG tự vào trận — chờ P1 bấm "BẮT ĐẦU". Chỉ báo trạng thái chọn tướng để bật nút.
+  await publishRoom(ws.roomCode, {
+    type: "selected", role: ws.role, charId,
+    bothReady: Boolean(room.p1Char && room.p2Char),
+  });
+}
+
+// P1 bấm BẮT ĐẦU: đủ 2 tướng thì phát start (dùng cho cả trận đầu lẫn chơi-lại-đổi-tướng).
+async function beginMatch(ws: GameSocket) {
+  if (ws.role !== "p1" || !ws.roomCode) return;
+  const redis = await getPublisher();
+  const room = await redis.hGetAll(roomKey(ws.roomCode));
   if (room.p1Char && room.p2Char) {
     await publishRoom(ws.roomCode, {
-      type: "start",
-      mode: room.mode || "versus",
-      p1Char: room.p1Char,
-      p2Char: room.p2Char,
+      type: "start", mode: room.mode || "versus", p1Char: room.p1Char, p2Char: room.p2Char,
     });
+  } else {
+    send(ws, { type: "error", message: "Cần cả hai chọn tướng trước khi bắt đầu." });
   }
 }
 
@@ -250,6 +261,10 @@ async function handleRoomMessage(ws: GameSocket, message: Record<string, unknown
   const type = message.type;
   if (type === "selection") {
     await handleSelection(ws, message.charId);
+    return;
+  }
+  if (type === "begin") {
+    await beginMatch(ws);
     return;
   }
   if (type === "snapshot") {

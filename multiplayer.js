@@ -191,7 +191,7 @@
         roomBox.textContent = this.room;
         waiting.classList.remove("hidden");
         actions.classList.add("hidden");
-        this.setStatus(message.peerReady ? "Đã đủ hai người, đang chuẩn bị trận…" : "Đang chờ Player 2 vào phòng…");
+        this.refreshLobbyControls(!!message.peerReady);
         // Áp tướng đã chọn cho đúng vai được gán, rồi báo server (WYSIWYG với nút chọn tướng)
         if (this.role === "p1") Game.p1CharId = this.myChar; else Game.p2CharId = this.myChar;
         this.updateInviteUrl();
@@ -202,8 +202,13 @@
         return;
       }
       if (message.type === "ready") {
-        this.setStatus("Đã đủ hai người, đang đồng bộ nhân vật…");
         this.sendSelection();
+        this.refreshLobbyControls(true);   // đủ 2 người -> bật nút BẮT ĐẦU cho P1
+        return;
+      }
+      if (message.type === "selected") {
+        // ai đó (re)chọn tướng -> cập nhật nút bắt đầu theo trạng thái đủ đôi
+        if (this.role && !this.started) this.refreshLobbyControls(!!message.bothReady);
         return;
       }
       if (message.type === "start") {
@@ -512,6 +517,8 @@
         this.applyingControl = true;
         Game.toMenu();
         this.applyingControl = false;
+      } else if (action === "to_lobby") {
+        this.goToRoomLobby();   // P1 chọn "Đổi tướng" -> cả hai về sảnh phòng
       }
     },
 
@@ -564,12 +571,51 @@
 
     // Hiện tướng đang chọn — soi từ ô tướng ở menu (bảng chọn tướng luôn cập nhật ô này).
     updateCharDisplay() {
-      const btn = byId("onlineCharBtn");
-      if (!btn) return;
       const tile = byId("p1Select");
       const emoji = tile?.querySelector(".fp-emoji")?.textContent || "👒";
       const name = tile?.querySelector("b")?.textContent || "LUFFY";
-      btn.innerHTML = `${emoji} <b>${name}</b> · Chạm để đổi tướng ▾`;
+      const html = `${emoji} <b>${name}</b> · Chạm để đổi tướng ▾`;
+      for (const id of ["onlineCharBtn", "onlineCharBtn2"]) { const b = byId(id); if (b) b.innerHTML = html; }
+    },
+
+    // Cấu hình sảnh chờ: nút BẮT ĐẦU chỉ P1 thấy + bật khi đủ 2 người; cập nhật trạng thái.
+    refreshLobbyControls(bothHere) {
+      const isP1 = this.role === "p1";
+      const startBtn = byId("onlineStartBtn");
+      if (startBtn) {
+        startBtn.style.display = isP1 ? "" : "none";
+        startBtn.disabled = !bothHere;
+        startBtn.style.opacity = bothHere ? "" : "0.45";
+      }
+      this.updateCharDisplay();
+      if (!bothHere) this.setStatus(isP1 ? "Đang chờ Player 2 vào phòng…" : "Đã vào phòng — chờ đủ người…");
+      else this.setStatus(isP1 ? "Đủ 2 người! Chọn tướng rồi bấm BẮT ĐẦU." : "Chọn tướng — chờ chủ phòng bấm BẮT ĐẦU.");
+    },
+
+    // P1 bấm BẮT ĐẦU -> server phát start (dùng cho cả trận đầu lẫn chơi-lại)
+    beginMatch() {
+      if (this.role !== "p1") return;
+      this.send({ type: "begin" });
+      this.setStatus("Đang bắt đầu…");
+    },
+
+    // Về sảnh phòng để đổi tướng + chơi lại (giữ kết nối, cùng phòng)
+    goToRoomLobby() {
+      this.started = false;
+      if (Game.state !== "menu") Game.state = "menu";   // dừng trận, không hiện menu chính
+      if (Game.hide) Game.hide("result");
+      byId("rematchLobbyBtn")?.classList.add("hidden");
+      lobby.classList.remove("hidden");
+      actions.classList.add("hidden");
+      waiting.classList.remove("hidden");
+      this.refreshLobbyControls(true);
+      this.setStatus(this.role === "p1" ? "Đổi tướng rồi bấm BẮT ĐẦU để chơi lại." : "Đổi tướng — chờ chủ phòng bắt đầu.");
+    },
+
+    requestRematchLobby() {
+      if (this.role !== "p1") return;
+      this.sendControl("to_lobby");
+      this.goToRoomLobby();
     },
 
     // Mở bảng chọn tướng đầy đủ (dùng lại của menu). Đợi bảng đóng thì lưu lựa chọn;
@@ -620,6 +666,9 @@
   byId("joinRoomBtn")?.addEventListener("click", () => Online.joinRoom(roomInput.value));
   byId("copyRoomBtn")?.addEventListener("click", () => Online.copyInvite());
   byId("onlineCharBtn")?.addEventListener("click", () => Online.chooseChar());
+  byId("onlineCharBtn2")?.addEventListener("click", () => Online.chooseChar());
+  byId("onlineStartBtn")?.addEventListener("click", () => Online.beginMatch());
+  byId("rematchLobbyBtn")?.addEventListener("click", () => Online.requestRematchLobby());
   byId("onlineModePick")?.querySelectorAll(".mode-opt").forEach((b) => {
     b.addEventListener("click", () => {
       Online.gameMode = b.dataset.gm === "adventure" ? "adventure" : "versus";
@@ -680,6 +729,7 @@
       }
       Online.sendControl("continue");
     }
+    document.getElementById("rematchLobbyBtn")?.classList.add("hidden");
     return originalContinue.call(this);
   };
 
@@ -700,6 +750,8 @@
         title: document.getElementById("resultTitle")?.textContent,
         text: document.getElementById("resultText")?.innerHTML,
       });
+      // Hết TRẬN: cho P1 nút "Đổi tướng & chơi lại" (giữa các hiệp thì ẩn)
+      document.getElementById("rematchLobbyBtn")?.classList.toggle("hidden", this.state !== "matchover");
     }
     return result;
   };
